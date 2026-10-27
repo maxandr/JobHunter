@@ -1,0 +1,275 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Job Hunter</title>
+<meta name="job-hunter" content="app">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<header class="top">
+  <div class="brand"><span class="logo">◆</span> Job Hunter</div>
+  <nav class="tabs">
+    <button class="tab active" data-view="jobs">Jobs</button>
+    <button class="tab" data-view="resume">Resume &amp; profile</button>
+    <button class="tab" data-view="sources">Sources</button>
+    <button class="tab" data-view="settings">Settings</button>
+  </nav>
+  <div class="searchGroup">
+    <select id="searchAge" aria-label="Find postings published within" title="Only look for postings published within this period">
+      <option value="3">Last 3 days</option>
+      <option value="7">Last 7 days</option>
+      <option value="14">Last 14 days</option>
+      <option value="30">Last 30 days</option>
+      <option value="0">Any date</option>
+    </select>
+    <button id="searchBtn" class="primary">Find new jobs</button>
+    <button id="restartBtn" class="ghost" title="Restart the server (picks up changes to config.json and the code)">↻ Restart</button>
+  </div>
+</header>
+
+<div id="taskBar" class="taskbar hidden"></div>
+
+<main id="viewJobs" class="view">
+  <section class="listPane">
+    <form id="addForm" class="addForm">
+      <input id="addInput" placeholder="Paste a job URL or posting text…" autocomplete="off">
+      <button type="submit">Add</button>
+    </form>
+    <div class="filters">
+      <div id="statusFilters" class="chips"></div>
+      <select id="sortSel" aria-label="Sort">
+        <option value="fit">Best fit</option>
+        <option value="new">Newest</option>
+        <option value="company">Company</option>
+      </select>
+      <select id="ageSel" aria-label="Posted within">
+        <option value="7">Posted ≤ 7 days</option>
+        <option value="14">Posted ≤ 14 days</option>
+        <option value="30">Posted ≤ 30 days</option>
+        <option value="">Posted: any time</option>
+      </select>
+    </div>
+    <div id="jobList" class="jobList"></div>
+  </section>
+
+  <section id="detail" class="detailPane">
+    <div class="empty">Select a job on the left.<br><span class="muted">New here? Fill in “Resume &amp; profile” first, then press “Find new jobs”.</span></div>
+  </section>
+</main>
+
+<main id="viewResume" class="view hidden">
+  <div class="texts">
+    <section>
+      <h2>Base resume <button id="syncResume" class="ghost" style="float:right;font-size:12px" title="Download the resume PDF from Google Drive again and convert it">Update from Google Drive</button></h2>
+      <p class="muted">Updated automatically from your PDF on Google Drive at every start (only if the PDF changed). Edits here are overwritten by the next PDF change — edit the Google Doc instead.</p>
+      <textarea id="resumeText" spellcheck="false"></textarea>
+    </section>
+    <section>
+      <h2>Profile &amp; preferences</h2>
+      <p class="muted">Where you work from — used for location scoring, salary estimates and cover letters.</p>
+      <div class="setGrid candidate">
+        <label class="field">Where you live (country)<input id="candLivesIn" placeholder="e.g. Germany" autocomplete="off"></label>
+        <label class="field">Time zone<input id="candTimezone" placeholder="e.g. UTC+1" autocomplete="off"></label>
+        <label class="field">Salary currency<input id="candCurrency" placeholder="USD" maxlength="3" autocomplete="off"></label>
+      </div>
+      <p class="muted">What you are looking for: roles, location limits, languages, salary, deal-breakers. Used for search and scoring.</p>
+      <textarea id="profileText" spellcheck="false"></textarea>
+    </section>
+  </div>
+  <div class="saveRow"><span id="saveMsg" class="muted"></span><button id="saveTexts" class="primary">Save</button></div>
+</main>
+
+<main id="viewSources" class="view hidden">
+  <div class="sourcesWrap">
+    <h2>Your job sources</h2>
+    <p class="muted">Sites and Telegram channels that “Find new jobs” checks first, on top of the usual boards.
+      Telegram: public channels only (<code>@channel</code> or <code>t.me/channel</code>) — Claude reads the latest posts from the channel's web preview.</p>
+    <form id="sourceForm" class="addForm sourceForm">
+      <input id="sourceInput" placeholder="Site link (example.com/jobs?q=unreal) or @telegram_channel" autocomplete="off">
+      <input id="sourceNote" placeholder="Note for Claude (optional), e.g. “only C++ posts”" autocomplete="off">
+      <button type="submit" class="primary">Add</button>
+    </form>
+    <div id="sourceList" class="sourceList"></div>
+    <div class="filterBox">
+      <h2>Filter</h2>
+      <p class="muted">Whole words, comma-separated (“engine” does not match “engineer”).
+        Words to look for pick postings from the sites' link lists; words to hide also remove matching job titles from every search.</p>
+      <label class="field">Look for<input id="filterInclude" autocomplete="off" placeholder="unreal, gameplay, c++"></label>
+      <label class="field">Hide<input id="filterExclude" autocomplete="off" placeholder="rendering, technical artist, qa"></label>
+      <div class="saveRow sourcesRun"><span id="filterMsg" class="muted"></span><button id="saveFilter">Save filter</button></div>
+    </div>
+    <div class="saveRow sourcesRun">
+      <span class="muted">Uses the period selected next to “Find new jobs”.</span>
+      <button id="searchSourcesBtn">Search only these sources</button>
+    </div>
+  </div>
+</main>
+
+<main id="viewSettings" class="view hidden">
+  <div class="sourcesWrap settingsWrap">
+    <section class="setBox">
+      <h2>Models</h2>
+      <p class="muted">Which Claude model and how much thinking each action uses. Bigger models and higher effort are smarter
+        but slower and use more of your subscription limits. Changes apply to the next run, no restart needed.</p>
+      <div class="presets">
+        <span class="muted">Presets:</span>
+        <button class="ghost setPreset" data-preset="economy" title="Haiku, low effort — fast, light on limits">Economy</button>
+        <button class="ghost setPreset" data-preset="balanced" title="Sonnet, medium effort — the default">Balanced</button>
+        <button class="ghost setPreset" data-preset="quality" title="Opus, high effort for search, CVs and people; Sonnet for the rest">Best quality</button>
+        <button class="ghost setPreset" data-preset="max" title="Opus, max effort everywhere — slow, uses limits fast">Maximum</button>
+      </div>
+      <div class="modelTable" id="modelTable"></div>
+      <p class="muted small">“CLI default” = whatever model Claude Code uses when you run <code>claude</code> yourself.
+        xhigh / max effort need a recent Claude Code. Custom accepts any model name, e.g. <code>claude-opus-5-5</code> or <code>sonnet[1m]</code>.</p>
+    </section>
+
+    <section class="setBox">
+      <h2>Languages</h2>
+      <p class="muted">What language Claude writes in. “Same as the posting” follows the language of the job posting (or the form).
+        A one-off language for a single CV can be picked in the Generate box of a job.</p>
+      <div class="setGrid">
+        <label class="field">Tailored resume<select class="langSel" data-key="languages.cv"></select></label>
+        <label class="field">Cover letter<select class="langSel" data-key="languages.letter"></select></label>
+        <label class="field">LinkedIn notes (HR &amp; referrals)<select class="langSel" data-key="languages.messages"></select></label>
+        <label class="field">Answers in application forms<select class="langSel" data-key="languages.forms"></select></label>
+      </div>
+    </section>
+
+    <section class="setBox">
+      <h2>Search</h2>
+      <div class="setGrid">
+        <label class="field">Jobs per search<input type="number" min="1" max="60" data-key="maxJobsPerSearch"></label>
+        <label class="field">Default posting age, days (0 = any)<input type="number" min="0" max="365" data-key="maxPostingAgeDays"></label>
+        <label class="field">Claude runs at once<input type="number" min="1" max="6" data-key="maxParallel"></label>
+      </div>
+      <label class="check"><input type="checkbox" data-key="perplexity"> Use Perplexity from your claude.ai account (search, salary estimates, people)</label>
+    </section>
+
+    <section class="setBox">
+      <h2>Auto search</h2>
+      <p class="muted">Runs “Find new jobs” by itself while the server is running. A manual search restarts the countdown.</p>
+      <label class="check"><input type="checkbox" data-key="autoSearch.enabled"> Search automatically</label>
+      <div class="setGrid">
+        <label class="field">Every, hours<input type="number" min="1" max="168" data-key="autoSearch.everyHours"></label>
+        <label class="field">Postings from the last, days (0 = any)<input type="number" min="0" max="365" data-key="autoSearch.maxAgeDays"></label>
+      </div>
+      <label class="check"><input type="checkbox" data-key="autoSearch.sourcesOnly"> Only my sources (Sources tab)</label>
+      <p class="muted small" id="autoNext"></p>
+    </section>
+
+    <section class="setBox">
+      <h2>Resume</h2>
+      <div class="setGrid wide">
+        <label class="field">Google Doc / Drive link<input data-key="resumeDrive" placeholder="https://docs.google.com/document/d/…"></label>
+        <label class="field">Or a local PDF (overrides the link)<input data-key="resumePdfPath" placeholder="C:\Users\you\resume.pdf"></label>
+      </div>
+      <label class="check"><input type="checkbox" data-key="resumeSyncOnStart"> Check the resume for changes at every server start</label>
+    </section>
+
+    <section class="setBox">
+      <h2>Browsers</h2>
+      <div class="setGrid wide">
+        <label class="field">Form-filling browser .exe (empty = the one the app is open in)<input data-key="applyBrowserBin" placeholder="auto"></label>
+        <label class="field">PDF browser .exe (empty = Edge / Chrome)<input data-key="browserBin" placeholder="auto"></label>
+        <label class="field">Form-filling browser debug port<input type="number" min="1024" max="65535" data-key="applyBrowserPort"></label>
+      </div>
+      <div id="browserList" class="browserList"></div>
+    </section>
+
+    <section class="setBox">
+      <h2>Claude Code &amp; tools</h2>
+      <div class="setGrid wide">
+        <label class="field">Path to claude (empty = from PATH)<input data-key="claudeBin" placeholder="claude"></label>
+        <label class="field">MCP config file (e.g. Perplexity with your own API key)<input data-key="mcpConfig" placeholder="mcp-perplexity.json"></label>
+        <label class="field">Extra allowed tools, comma-separated<input data-key="extraAllowedTools" placeholder="mcp__perplexity"></label>
+      </div>
+      <div class="testRow"><button id="testClaude">Test Claude</button><span id="testClaudeMsg" class="muted"></span></div>
+    </section>
+
+    <section class="setBox">
+      <h2>Server</h2>
+      <div class="setGrid">
+        <label class="field">Port (needs restart)<input type="number" min="1024" max="65535" data-key="port"></label>
+      </div>
+    </section>
+
+    <section class="setBox">
+      <h2>Usage <select id="usageDays" aria-label="Period"><option value="1">Today</option><option value="7">7 days</option><option value="30" selected>30 days</option><option value="365">Year</option></select></h2>
+      <p class="muted">Claude runs per action. “API value” is what the same tokens would cost on the paid API — you don't pay it
+        with a subscription, but it shows which actions use the most of your limits.</p>
+      <div id="usageTable"></div>
+    </section>
+
+    <details class="setBox rawBox">
+      <summary>Advanced: edit config.json directly</summary>
+      <textarea id="rawConfig" spellcheck="false" rows="16"></textarea>
+      <div class="saveRow sourcesRun"><button id="saveRaw">Save JSON</button></div>
+    </details>
+  </div>
+  <div class="setSave"><span id="settingsMsg" class="muted"></span><button id="resetSettings" class="ghost">Undo changes</button><button id="saveSettings" class="primary">Save settings</button></div>
+</main>
+
+<template id="detailTpl">
+  <div class="dHead">
+    <div>
+      <h1 class="dTitle"></h1>
+      <div class="dCompany"></div>
+    </div>
+    <div class="fitBig"></div>
+  </div>
+  <div class="dMeta"></div>
+  <section data-coll="salary"><div class="cHead"><span class="cArrow">▾</span>Pay<span class="cHint"></span></div>
+    <div class="dSalary"></div></section>
+  <div class="dActions">
+    <select class="dStatus"></select>
+    <a class="dLink button" target="_blank" rel="noopener">Open posting ↗</a>
+    <button class="dRefresh ghost" title="Re-read the posting and re-score it against your current resume and profile. Status, notes and CVs are kept.">↻ Refresh</button>
+    <button class="dDelete ghost">Delete</button>
+  </div>
+  <div class="skipBox hidden">
+    <input class="dSkipReason" maxlength="200" autocomplete="off"
+      placeholder="Why skip? (optional, e.g. “Unity only”, “US residents only”) — added to your profile so searches avoid it">
+    <button class="dSkipSave ghost">Save reason</button>
+  </div>
+  <p class="skipDone muted hidden"></p>
+  <section data-coll="apply"><div class="cHead"><span class="cArrow">▾</span>Apply<span class="cHint"></span></div>
+  <div class="applyBox">
+    <div class="applyRow">
+      <input class="dApplyUrl" placeholder="Application form link (optional — if the form is on another page)" autocomplete="off">
+      <button class="dApply primary" title="Opens the page in a separate browser window and fills the form from your resume and cover letter">Open &amp; fill form</button>
+      <button class="dAutoApply" title="Makes a tailored CV if there is none yet, opens the application page, fills the form, ticks the consent boxes and presses Send">Try to auto apply</button>
+    </div>
+    <p class="muted applyHint">“Open &amp; fill form” submits nothing: check the fields outlined in yellow, fill the rest and press Submit yourself.
+      “Try to auto apply” makes a tailored CV if there is none, fills the form, ticks the consent boxes and <strong>sends it</strong>.
+      <span class="extHint"></span></p>
+  </div>
+  </section>
+  <p class="dSummary"></p>
+  <p class="dReason muted"></p>
+  <section data-coll="notes"><div class="cHead"><span class="cArrow">▾</span>Notes<span class="cHint"></span></div>
+    <textarea class="dNotes" rows="3" placeholder="Contacts, salary talk, interview dates…"></textarea></section>
+
+  <section data-coll="people"><div class="cHead"><span class="cArrow">▾</span>People to contact<span class="cHint"></span>
+      <button class="dPeople primary cAct" title="Looks for the recruiter / hiring manager (mostly on LinkedIn), the company's referral program and 3 employees who could refer you">Find HR &amp; referrals</button></div>
+    <div class="peopleBox"><div class="peopleBody"></div></div>
+  </section>
+
+  <section data-coll="docs"><div class="cHead"><span class="cArrow">▾</span>Tailored CV &amp; cover letter<span class="cHint"></span>
+      <button class="dTailor primary cAct">Generate</button></div>
+  <div class="docsBox">
+    <details class="extraBox"><summary>Options: extra instructions, language</summary>
+      <textarea class="dExtra" rows="2" placeholder="e.g. emphasize multiplayer networking, keep it to one page"></textarea>
+      <label class="langRow">Language of this CV &amp; letter <select class="dLang langSel" data-default="From settings"></select></label>
+    </details>
+    <div class="docsBody"></div>
+  </div>
+  </section>
+</template>
+
+<script src="cv-render.js"></script>
+<script src="diff.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

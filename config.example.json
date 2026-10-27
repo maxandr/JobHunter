@@ -1,0 +1,14 @@
+{
+  "port": 4317,
+  "claudeBin": "",
+  "resumeDrive": "",
+  "resumePdfPath": "",
+  "models": { "search": "sonnet", "analyze": "sonnet", "tailor": "sonnet", "resume": "sonnet", "apply": "sonnet" },
+  "effort": { "search": "medium", "analyze": "medium", "tailor": "medium", "resume": "low", "apply": "low" },
+  "perplexity": true,
+  "mcpConfig": "",
+  "extraAllowedTools": [],
+  "maxJobsPerSearch": 15,
+  "maxPostingAgeDays": 30,
+  "searchTimeoutMinutes": 20
+}
