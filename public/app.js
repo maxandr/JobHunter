@@ -892,7 +892,7 @@ const ACTION_INFO = {
   tailor: ['CV + cover letter', 'Writing quality matters most here'],
   people: ['HR & referrals', 'LinkedIn and web lookups'],
   apply: ['Fill application forms', 'Short answers to form fields'],
-  resume: ['Resume from Google Drive', 'Copies the PDF text into Markdown'],
+  resume: ['Resume from PDF', 'Copies the PDF text into Markdown'],
 };
 const MODEL_OPTS = [['', 'CLI default'], ['haiku', 'Haiku — fast, light'], ['sonnet', 'Sonnet — balanced'], ['opus', 'Opus — smartest']];
 const MODEL_EXACT = [['claude-fable-5-1', 'Fable 5.1'], ['claude-opus-5-5', 'Opus 5.5'], ['claude-sonnet-5-5', 'Sonnet 5.5'], ['claude-haiku-5-5', 'Haiku 5.5']];

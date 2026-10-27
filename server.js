@@ -206,7 +206,7 @@ async function handle(req, res) {
       candidate: store.candidate() });
   }
   if (p === '/api/resume/sync' && m === 'POST') {
-    const t = enqueue('resume', 'Updating resume from Google Drive', log => syncResume({ force: true, onLog: log }));
+    const t = enqueue('resume', 'Updating resume from the PDF', log => syncResume({ force: true, onLog: log }));
     return send(res, 202, publicTask(t));
   }
   if (p === '/api/profile/skill' && m === 'POST') {
@@ -385,7 +385,7 @@ server.listen(config.port, '127.0.0.1', () => {
   console.log(`Job Hunter is running: http://localhost:${config.port}  (type "restart" or "exit" here)`);
   // Pull the latest resume PDF on every start (Claude runs only if the PDF changed).
   if (config.resumeSyncOnStart && (config.resumeDrive || config.resumePdfPath)) {
-    enqueue('resume', 'Checking resume on Google Drive', log => syncResume({ onLog: log }));
+    enqueue('resume', 'Checking the resume PDF for changes', log => syncResume({ onLog: log }));
   }
   setInterval(autoSearchTick, 60000);
   setTimeout(autoSearchTick, 15000);
