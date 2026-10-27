@@ -9,7 +9,7 @@ const S = { jobs: [], tasks: [], hasResume: false, sel: null, filter: 'active', 
 S.searchAge = '30';
 try {
   const a = localStorage.getItem('ageFilter'); if (a !== null) S.age = a;
-  const sa = localStorage.getItem('searchAge'); if (sa !== null) S.searchAge = sa;
+  const sa = localStorage.getItem('searchAge'); if (sa !== null && sa !== '0') S.searchAge = sa; // "Any date" was removed
 } catch (_) { /* storage blocked */ }
 const $ = (s, r = document) => r.querySelector(s);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));

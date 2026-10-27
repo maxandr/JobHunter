@@ -18,11 +18,11 @@
   </nav>
   <div class="searchGroup">
     <select id="searchAge" aria-label="Find postings published within" title="Only look for postings published within this period">
+      <option value="1">Last 1 day</option>
       <option value="3">Last 3 days</option>
       <option value="7">Last 7 days</option>
       <option value="14">Last 14 days</option>
       <option value="30">Last 30 days</option>
-      <option value="0">Any date</option>
     </select>
     <button id="searchBtn" class="primary">Find new jobs</button>
     <button id="restartBtn" class="ghost" title="Restart the server (picks up changes to config.json and the code)">↻ Restart</button>
@@ -45,6 +45,7 @@
         <option value="company">Company</option>
       </select>
       <select id="ageSel" aria-label="Posted within">
+        <option value="1">Posted ≤ 1 day</option>
         <option value="7">Posted ≤ 7 days</option>
         <option value="14">Posted ≤ 14 days</option>
         <option value="30">Posted ≤ 30 days</option>
@@ -62,7 +63,7 @@
 <main id="viewResume" class="view hidden">
   <div class="texts">
     <section>
-      <h2>Base resume <button id="syncResume" class="ghost" style="float:right;font-size:12px" title="Download the resume PDF from Google Drive again and convert it">Update from Google Drive</button></h2>
+      <h2>Base resume <button id="syncResume" class="ghost" style="float:right;font-size:12px" title="Download the resume again (Google Drive link or local PDF from Settings) and convert it">Update</button></h2>
       <p class="muted">Updated automatically from your PDF on Google Drive at every start (only if the PDF changed). Edits here are overwritten by the next PDF change — edit the Google Doc instead.</p>
       <textarea id="resumeText" spellcheck="false"></textarea>
     </section>
@@ -96,8 +97,8 @@
       <h2>Filter</h2>
       <p class="muted">Whole words, comma-separated (“engine” does not match “engineer”).
         Words to look for pick postings from the sites' link lists; words to hide also remove matching job titles from every search.</p>
-      <label class="field">Look for<input id="filterInclude" autocomplete="off" placeholder="unreal, gameplay, c++"></label>
-      <label class="field">Hide<input id="filterExclude" autocomplete="off" placeholder="rendering, technical artist, qa"></label>
+      <label class="field">Look for<input id="filterInclude" autocomplete="off" placeholder="example: unreal, gameplay, c++"></label>
+      <label class="field">Hide<input id="filterExclude" autocomplete="off" placeholder="example: rendering, technical artist, qa"></label>
       <div class="saveRow sourcesRun"><span id="filterMsg" class="muted"></span><button id="saveFilter">Save filter</button></div>
     </div>
     <div class="saveRow sourcesRun">
