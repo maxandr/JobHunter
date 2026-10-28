@@ -7,6 +7,8 @@ const STATUSES = [
 ];
 const S = { jobs: [], tasks: [], hasResume: false, sel: null, filter: 'active', sort: 'fit', docTab: 'cv', editing: false, age: '30' };
 S.searchAge = '30';
+S.adding = new Set(); // ids of "Add" tasks whose job should open as soon as it lands
+S.fresh = null; // the just-added job, highlighted in the list for a few seconds
 try {
   const a = localStorage.getItem('ageFilter'); if (a !== null) S.age = a;
   const sa = localStorage.getItem('searchAge'); if (sa !== null && sa !== '0') S.searchAge = sa; // "Any date" was removed
@@ -62,12 +64,13 @@ async function refresh() {
     const st = await api('/api/state');
     const prevTasks = S.tasks;
     Object.assign(S, st);
+    const added = openAdded();
     renderTasks();
     renderList();
     // re-render detail if a task for the selected job just finished
     const finished = st.tasks.find(t => t.jobId === S.sel && t.status !== 'running' && t.status !== 'queued'
       && prevTasks.some(p => p.id === t.id && (p.status === 'running' || p.status === 'queued')));
-    if (finished || !$('#detail .dHead')) renderDetail();
+    if (added || finished || !$('#detail .dHead')) renderDetail();
     else updateTailorButton();
   } catch (e) {
     $('#taskBar').classList.remove('hidden');
@@ -112,13 +115,36 @@ function filtered() {
   let list = S.jobs.slice();
   if (S.filter === 'active') list = list.filter(j => !['rejected', 'skip'].includes(j.status));
   else if (S.filter !== 'all') list = list.filter(j => j.status === S.filter);
-  list = list.filter(j => !tooOld(j));
+  list = list.filter(j => !tooOld(j) || j.id === S.fresh);
   const by = {
     fit: (a, b) => (b.fitScore ?? -1) - (a.fitScore ?? -1),
     new: (a, b) => b.foundAt.localeCompare(a.foundAt),
     company: (a, b) => a.company.localeCompare(b.company),
   }[S.sort];
   return list.sort(by);
+}
+
+// A job pasted via "Add" opens by itself once its analyze task finishes, and its row is highlighted.
+function openAdded() {
+  let opened = null;
+  for (const id of S.adding) {
+    const t = S.tasks.find(x => x.id === id);
+    if (t && (t.status === 'running' || t.status === 'queued')) continue;
+    S.adding.delete(id);
+    const job = t && t.status === 'done' && t.result && t.result.job;
+    if (job && S.jobs.some(j => j.id === job.id)) opened = job.id;
+  }
+  if (!opened) return false;
+  S.sel = opened; S.editing = false; S.docTab = 'cv';
+  if (!['active', 'all', 'new'].includes(S.filter)) S.filter = 'active';
+  S.fresh = opened;
+  clearTimeout(openAdded.t);
+  openAdded.t = setTimeout(() => { S.fresh = null; renderList(); }, 8000);
+  requestAnimationFrame(() => {
+    const row = $(`#jobList .jobRow[data-id="${opened}"]`);
+    if (row) { row.classList.add('pulse'); row.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); }
+  });
+  return true;
 }
 
 function renderFilters() {
@@ -139,11 +165,12 @@ function renderList() {
     return;
   }
   el.innerHTML = list.map(j => `
-    <div class="jobRow ${j.id === S.sel ? 'sel' : ''}" data-id="${j.id}">
+    <div class="jobRow ${j.id === S.sel ? 'sel' : ''} ${j.id === S.fresh ? 'fresh' : ''}" data-id="${j.id}">
       <div class="t">${esc(j.title)}</div>
       <div class="fit ${fitClass(j.fitScore)}">${j.fitScore ?? '–'}</div>
       <div class="c">${esc(j.company)}${j.remote ? ' · ' + esc(j.remote) : ''}</div>
       <div class="badges">
+        ${j.id === S.fresh ? '<span class="badge new">just added</span>' : ''}
         ${j.status === 'new' ? '<span class="badge new">new</span>' : `<span class="badge">${statusLabel(j.status)}</span>`}
         <span class="badge ${ageDays(j.posted) == null ? 'warn' : ''}" title="${esc(j.posted ? 'Posted ' + j.posted : 'Posting date unknown')}">${ageText(ageDays(j.posted))}</span>
         ${salaryBadge(j)}
@@ -855,7 +882,10 @@ $('#addForm').addEventListener('submit', async e => {
   const input = $('#addInput').value.trim();
   if (!input) return;
   if (!S.hasResume) return alert('Fill in your resume first (Resume & profile tab).');
-  try { await api('/api/jobs', { method: 'POST', body: { input } }); $('#addInput').value = ''; refresh(); }
+  try {
+    const t = await api('/api/jobs', { method: 'POST', body: { input } });
+    S.adding.add(t.id); $('#addInput').value = ''; refresh();
+  }
   catch (err) { alert(err.message); }
 });
 

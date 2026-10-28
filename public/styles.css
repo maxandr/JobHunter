@@ -76,6 +76,12 @@ input:focus, select:focus, textarea:focus { border-color: var(--accent); }
 }
 .jobRow:hover { background: var(--soft); }
 .jobRow.sel { background: var(--sel); box-shadow: inset 3px 0 0 var(--accent); }
+.jobRow.fresh { background: color-mix(in srgb, var(--accent) 14%, var(--bg)); box-shadow: inset 4px 0 0 var(--accent); }
+.jobRow.pulse { animation: freshPulse 1.4s ease-out 2; }
+@keyframes freshPulse {
+  0% { background: color-mix(in srgb, var(--accent) 40%, var(--bg)); }
+  100% { background: color-mix(in srgb, var(--accent) 14%, var(--bg)); }
+}
 .jobRow .t { font-weight: 600; overflow: hidden; text-overflow: ellipsis; }
 .jobRow .c { color: var(--muted); font-size: 13px; grid-column: 1; }
 .jobRow .fit { grid-row: 1 / 3; grid-column: 2; align-self: center; }
