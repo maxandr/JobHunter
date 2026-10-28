@@ -5,6 +5,11 @@ so it runs on your Claude subscription, with no separate API billing.
 
 What it does:
 - **Find new jobs** — Claude searches for open positions matching your profile, drops duplicates and closed listings, and gives each a 0–100 match score.
+- **Companies** — on the "Extra sources" tab, paste a company's job board link on Greenhouse, Lever, Ashby or Workable
+  (e.g. `job-boards.greenhouse.io/discord`), or its careers page if one of these boards is embedded there.
+  The app downloads all of the company's open postings through the platform's public API (free, no Claude tokens),
+  keeps new ones whose titles have your "Look for" words and none of the "Hide" words, and only those go to Claude for scoring
+  (up to 30 per company). With "Search only these sources", if nothing is new, Claude is not run at all.
 - **Extra sources** — additional (optional) job sites and Telegram channels (`@channel`, `t.me/channel`, or a link to a site/search page).
   "Find new jobs" checks them first, and the "Search only these sources" button searches only them.
   Channels must be public: Claude reads the latest posts via the `t.me/s/<channel>` web preview. The list lives in `data\sources.json`.

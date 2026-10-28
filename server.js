@@ -11,6 +11,7 @@ const apply = require('./lib/apply');
 const { syncResume, draftProfile } = require('./lib/resume-sync');
 const { taskContext, resetClaude, claudeVersion } = require('./lib/claude');
 const { htmlToPdf, findBrowser } = require('./lib/pdf');
+const { findBoard } = require('./lib/ats-boards');
 
 store.ensure();
 // Read once at start for the port; everything else reads store.config() fresh, so the Settings tab applies at once.
@@ -266,8 +267,11 @@ async function handle(req, res) {
   if (p === '/api/sources' && m === 'GET') return send(res, 200, store.sources());
   if (p === '/api/sources' && m === 'POST') {
     const b = await readBody(req);
-    const s = store.addSource(b.input, b.note);
-    if (!s) return send(res, 400, { error: 'Enter a site link (e.g. example.com/jobs) or a Telegram channel (@channel or t.me/channel)' });
+    // A company board (Greenhouse, Lever...) — the link itself or the careers page it is embedded in.
+    const raw = String(b.input || '').trim();
+    const board = /^@|t\.me\/|telegram\.me\//i.test(raw) ? null : await findBoard(/^https?:\/\//i.test(raw) ? raw : 'https://' + raw);
+    const s = store.addSource(b.input, b.note, board);
+    if (!s) return send(res, 400, { error: 'Enter a site link (e.g. example.com/jobs), a company job board link (job-boards.greenhouse.io/discord) or a Telegram channel (@channel or t.me/channel)' });
     if (s.duplicate) return send(res, 409, { error: 'This source is already in the list' });
     return send(res, 200, s);
   }

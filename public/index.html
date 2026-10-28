@@ -92,9 +92,13 @@
     <p class="muted">“Find new jobs” already searches the web on its own: general search, remote job boards, boards for your field and region,
       company career pages and LinkedIn. Sites and channels you add here come <b>on top of that</b> — they are checked first, every time.
       Leave the list empty to use only the built-in search.</p>
+    <p class="muted">Companies: paste the company's job board link (<code>job-boards.greenhouse.io/discord</code>, <code>jobs.lever.co/…</code>,
+      <code>jobs.ashbyhq.com/…</code>, <code>apply.workable.com/…</code>) or its careers page if the board is embedded there.
+      The app downloads all their open postings itself, for free, and keeps those whose titles have your “Look for” words
+      (and none of the “Hide” words) — Claude only scores what is left. With “Search only these sources”, if nothing is new, Claude is not run at all.</p>
     <p class="muted">Telegram: public channels only (<code>@channel</code> or <code>t.me/channel</code>) — Claude reads the latest posts from the channel's web preview.</p>
     <form id="sourceForm" class="addForm sourceForm">
-      <input id="sourceInput" placeholder="Site link (example.com/jobs?q=unreal) or @telegram_channel" autocomplete="off">
+      <input id="sourceInput" placeholder="Company board (job-boards.greenhouse.io/discord), site link or @telegram_channel" autocomplete="off">
       <input id="sourceNote" placeholder="Note for Claude (optional), e.g. “only C++ posts”" autocomplete="off">
       <button type="submit" class="primary">Add</button>
     </form>
