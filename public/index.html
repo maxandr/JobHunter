@@ -13,7 +13,7 @@
   <nav class="tabs">
     <button class="tab active" data-view="jobs">Jobs</button>
     <button class="tab" data-view="resume">Resume &amp; profile</button>
-    <button class="tab" data-view="sources">Sources</button>
+    <button class="tab" data-view="sources">Extra sources</button>
     <button class="tab" data-view="settings">Settings</button>
   </nav>
   <div class="searchGroup">
@@ -85,9 +85,11 @@
 
 <main id="viewSources" class="view hidden">
   <div class="sourcesWrap">
-    <h2>Your job sources</h2>
-    <p class="muted">Sites and Telegram channels that “Find new jobs” checks first, on top of the usual boards.
-      Telegram: public channels only (<code>@channel</code> or <code>t.me/channel</code>) — Claude reads the latest posts from the channel's web preview.</p>
+    <h2>Extra sources (optional)</h2>
+    <p class="muted">“Find new jobs” already searches the web on its own: general search, remote job boards, boards for your field and region,
+      company career pages and LinkedIn. Sites and channels you add here come <b>on top of that</b> — they are checked first, every time.
+      Leave the list empty to use only the built-in search.</p>
+    <p class="muted">Telegram: public channels only (<code>@channel</code> or <code>t.me/channel</code>) — Claude reads the latest posts from the channel's web preview.</p>
     <form id="sourceForm" class="addForm sourceForm">
       <input id="sourceInput" placeholder="Site link (example.com/jobs?q=unreal) or @telegram_channel" autocomplete="off">
       <input id="sourceNote" placeholder="Note for Claude (optional), e.g. “only C++ posts”" autocomplete="off">
@@ -156,7 +158,7 @@
         <label class="field">Every, hours<input type="number" min="1" max="168" data-key="autoSearch.everyHours"></label>
         <label class="field">Postings from the last, days (0 = any)<input type="number" min="0" max="365" data-key="autoSearch.maxAgeDays"></label>
       </div>
-      <label class="check"><input type="checkbox" data-key="autoSearch.sourcesOnly"> Only my sources (Sources tab)</label>
+      <label class="check"><input type="checkbox" data-key="autoSearch.sourcesOnly"> Only my extra sources (Extra sources tab)</label>
       <p class="muted small" id="autoNext"></p>
     </section>
 
