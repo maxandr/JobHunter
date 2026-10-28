@@ -206,7 +206,12 @@ function salaryBadge(j) {
   const s = statedSalary(j) ? j.salary : j.salaryEstimate ? '≈ ' + j.salaryEstimate.range : '';
   if (!s) return '';
   const tip = statedSalary(j) ? 'Pay range from the posting' : 'Estimate from market data — the posting gives no figure';
-  return `<span class="badge ${statedSalary(j) ? 'pay' : ''}" title="${esc(tip + ': ' + s)}">${esc(s.length > 26 ? s.slice(0, 25) + '…' : s)}</span>`;
+  // Short form for the list: "$140,000 to $200,000 per year" → "$140k–$200k/yr"
+  const short = s.replace(/(\d+),000\b/g, '$1k')
+    .replace(/([\dk])\s*(?:to|-|–|—)\s*(?=[$€£¥₹]|\d)/gi, '$1–')
+    .replace(/\s*(?:per|\/|a)\s*(?:year|yr|annum)\b.*$/i, '/yr')
+    .replace(/\s*(?:per|\/|an)\s*(?:hour|hr)\b.*$/i, '/h');
+  return `<span class="badge ${statedSalary(j) ? 'pay' : ''}" title="${esc(tip + ': ' + s)}">${esc(short.length > 22 ? short.slice(0, 21) + '…' : short)}</span>`;
 }
 
 function salaryHtml(j) {
