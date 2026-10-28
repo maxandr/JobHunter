@@ -8,7 +8,7 @@ const crypto = require('node:crypto');
 const store = require('./lib/store');
 const actions = require('./lib/actions');
 const apply = require('./lib/apply');
-const { syncResume } = require('./lib/resume-sync');
+const { syncResume, draftProfile } = require('./lib/resume-sync');
 const { taskContext, resetClaude, claudeVersion } = require('./lib/claude');
 const { htmlToPdf, findBrowser } = require('./lib/pdf');
 
@@ -219,8 +219,14 @@ async function handle(req, res) {
     if (b.candidate) {
       try { store.saveCandidate(b.candidate); } catch (e) { return send(res, 400, { error: e.message }); }
     }
+    const firstResume = !store.readText(store.FILES.resume).trim();
     if (typeof b.resume === 'string') store.writeAtomic(store.FILES.resume, b.resume);
     if (typeof b.profile === 'string') store.writeAtomic(store.FILES.profile, b.profile);
+    // Resume pasted for the first time and no profile yet: draft one from the resume.
+    if (firstResume && store.readText(store.FILES.resume).trim() && !store.readText(store.FILES.profile).trim()) {
+      enqueue('resume', 'Drafting the profile from the resume', log => draftProfile({ onLog: log }));
+      return send(res, 200, { ok: true, profileDraft: true });
+    }
     return send(res, 200, { ok: true });
   }
 

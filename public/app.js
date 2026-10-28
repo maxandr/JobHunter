@@ -86,7 +86,11 @@ function renderTasks() {
   bar.innerHTML = recent.slice(0, 4).map(t => {
     let info = '';
     if (t.status === 'running') info = `<span class="muted">${Math.round((Date.now() - t.startedAt) / 1000)}s — searches can take several minutes</span>`;
-    if (t.status === 'done' && t.kind === 'resume') info = `<span class="muted">${t.result.updated ? 'resume updated from the PDF' : esc(t.result.reason || 'no changes')}</span>`;
+    if (t.status === 'done' && t.kind === 'resume') {
+      const parts = [t.result.updated ? 'resume updated from the PDF' : '',
+        t.result.profileDrafted ? 'profile drafted — check it on the “Resume & profile” tab' : ''].filter(Boolean);
+      info = `<span class="muted">${parts.join(', ') || esc(t.result.reason || 'no changes')}</span>`;
+    }
     if (t.status === 'done' && t.kind === 'people') info = `<span class="muted">hiring ${t.result.hiring}, referrers ${t.result.referrers}, referral program: ${esc(t.result.referral)}</span>`;
     if (t.status === 'done' && t.kind === 'refresh') info = `<span class="muted">fit now ${t.result.job.fitScore ?? '–'}</span>`;
     if (t.status === 'done' && t.kind === 'search') info = `<span class="muted">found ${t.result.found}, new ${t.result.added}${t.result.tooOld ? ', skipped ' + t.result.tooOld + ' too old' : ''}${t.result.notes ? ' — ' + esc(t.result.notes) : ''}</span>`;
@@ -775,11 +779,7 @@ document.addEventListener('click', async e => {
     }
   } else if (t.id === 'syncResume') {
     await api('/api/resume/sync', { method: 'POST' });
-    refresh();
-    const wait = setInterval(async () => {
-      const busy = S.tasks.some(x => x.kind === 'resume' && (x.status === 'running' || x.status === 'queued'));
-      if (!busy) { clearInterval(wait); loadTexts(); }
-    }, 3000);
+    reloadTextsAfterResumeTasks();
   } else if (t.id === 'restartBtn') {
     const busy = S.tasks.some(x => x.status === 'running' || x.status === 'queued');
     if (!confirm(busy ? 'A task is running or queued — restarting will stop it. Restart anyway?' : 'Restart the server?')) return;
@@ -793,11 +793,12 @@ document.addEventListener('click', async e => {
     }, 1500);
   } else if (t.id === 'saveTexts') {
     const candidate = { livesIn: $('#candLivesIn').value, timezone: $('#candTimezone').value, currency: $('#candCurrency').value };
+    let r;
     try {
-      await api('/api/texts', { method: 'PUT', body: { resume: $('#resumeText').value, profile: $('#profileText').value, candidate } });
+      r = await api('/api/texts', { method: 'PUT', body: { resume: $('#resumeText').value, profile: $('#profileText').value, candidate } });
     } catch (err) { $('#saveMsg').textContent = ''; return alert(err.message); }
-    $('#saveMsg').textContent = 'Saved ' + new Date().toLocaleTimeString();
-    refresh();
+    $('#saveMsg').textContent = 'Saved ' + new Date().toLocaleTimeString() + (r.profileDraft ? ' — drafting the profile from the resume…' : '');
+    if (r.profileDraft) reloadTextsAfterResumeTasks(); else refresh();
   }
 });
 
@@ -1042,6 +1043,15 @@ document.addEventListener('input', e => {
   if (e.target.id === 'usageDays') return loadUsage();
   setMsg('Unsaved changes');
 });
+
+// Resume update / profile draft run as "resume" tasks: show the new texts once they finish.
+function reloadTextsAfterResumeTasks() {
+  refresh();
+  const wait = setInterval(async () => {
+    const busy = S.tasks.some(x => x.kind === 'resume' && (x.status === 'running' || x.status === 'queued'));
+    if (!busy) { clearInterval(wait); loadTexts(); }
+  }, 3000);
+}
 
 async function loadTexts() {
   const t = await api('/api/texts');
