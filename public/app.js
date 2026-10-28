@@ -885,7 +885,9 @@ document.addEventListener('click', async e => {
       }
       S.editing = !S.editing; renderDocs(job);
     }
-  } else if (t.id === 'syncResume') {
+  } else if (t.id === 'syncResume' || t.id === 'syncResumeSet') {
+    // In Settings the link / PDF path may be unsaved yet: save first so the sync uses it.
+    if (t.id === 'syncResumeSet') await saveSettings(collectSettings());
     await api('/api/resume/sync', { method: 'POST' });
     reloadTextsAfterResumeTasks();
   } else if (t.id === 'restartBtn') {
