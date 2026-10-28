@@ -7,6 +7,7 @@ const STATUSES = [
 ];
 const S = { jobs: [], tasks: [], hasResume: false, sel: null, filter: 'active', sort: 'fit', docTab: 'cv', editing: false, age: '30' };
 S.searchAge = '30';
+S.find = ''; // text in the job search box
 S.adding = new Set(); // ids of "Add" tasks whose job should open as soon as it lands
 S.fresh = null; // the just-added job, highlighted in the list for a few seconds
 try {
@@ -111,11 +112,23 @@ function renderTasks() {
   $('#searchBtn').disabled = S.tasks.some(t => t.kind === 'search' && (t.status === 'running' || t.status === 'queued'));
 }
 
+// Every word of the search box must appear somewhere in the job's title, company, place, notes…
+function matchesFind(j) {
+  const words = S.find.toLowerCase().split(/\s+/).filter(Boolean);
+  if (!words.length) return true;
+  const hay = [j.title, j.company, j.location, j.remote, j.summary, j.notes, j.source, j.salary]
+    .filter(Boolean).join(' ').toLowerCase();
+  return words.every(w => hay.includes(w));
+}
+
 function filtered() {
   let list = S.jobs.slice();
   if (S.filter === 'active') list = list.filter(j => !['rejected', 'skip'].includes(j.status));
+  else if (S.filter === 'starred') list = list.filter(j => j.starred);
   else if (S.filter !== 'all') list = list.filter(j => j.status === S.filter);
-  list = list.filter(j => !tooOld(j) || j.id === S.fresh);
+  // While searching, old postings stay findable — the "Posted" filter applies only to browsing.
+  if (S.find.trim()) list = list.filter(j => matchesFind(j) || j.id === S.fresh);
+  else list = list.filter(j => !tooOld(j) || j.id === S.fresh);
   const by = {
     fit: (a, b) => (b.fitScore ?? -1) - (a.fitScore ?? -1),
     new: (a, b) => b.foundAt.localeCompare(a.foundAt),
@@ -149,7 +162,9 @@ function openAdded() {
 
 function renderFilters() {
   const counts = S.jobs.reduce((m, j) => (m[j.status] = (m[j.status] || 0) + 1, m), {});
-  const opts = [['active', 'Active'], ...STATUSES.filter(([k]) => counts[k]), ['all', 'All']];
+  counts.starred = S.jobs.filter(j => j.starred).length;
+  const opts = [['active', 'Active'], ...(counts.starred || S.filter === 'starred' ? [['starred', '★']] : []),
+    ...STATUSES.filter(([k]) => counts[k]), ['all', 'All']];
   $('#statusFilters').innerHTML = opts.map(([k, l]) =>
     `<button class="chip ${S.filter === k ? 'on' : ''}" data-f="${k}">${l}${counts[k] ? ' ' + counts[k] : ''}</button>`).join('');
 }
@@ -159,8 +174,9 @@ function renderList() {
   const list = filtered();
   const el = $('#jobList');
   if (!list.length) {
-    const hidden = S.jobs.filter(tooOld).length;
-    el.innerHTML = `<div class="listEmpty">${S.jobs.length ? 'Nothing in this filter.' + (hidden ? ` ${hidden} older posting(s) hidden — change the “Posted” filter.` : '') :
+    const hidden = S.find.trim() ? 0 : S.jobs.filter(tooOld).length;
+    const none = S.find.trim() ? `Nothing matches “${esc(S.find.trim())}”${S.filter === 'all' ? '.' : ' here — try the “All” filter.'}` : 'Nothing in this filter.';
+    el.innerHTML = `<div class="listEmpty">${S.jobs.length ? none + (hidden ? ` ${hidden} older posting(s) hidden — change the “Posted” filter.` : '') :
       S.hasResume ? 'No jobs yet. Press “Find new jobs” or paste a link above.' : 'Start with the “Resume &amp; profile” tab.'}</div>`;
     return;
   }
@@ -168,6 +184,8 @@ function renderList() {
     <div class="jobRow ${j.id === S.sel ? 'sel' : ''} ${j.id === S.fresh ? 'fresh' : ''}" data-id="${j.id}">
       <div class="t">${esc(j.title)}</div>
       <div class="fit ${fitClass(j.fitScore)}">${j.fitScore ?? '–'}</div>
+      <button class="star ${j.starred ? 'on' : ''}" data-id="${j.id}" title="${j.starred ? 'Remove from favorites' : 'Add to favorites'}"
+        aria-label="${j.starred ? 'Remove from favorites' : 'Add to favorites'}" aria-pressed="${!!j.starred}">${j.starred ? '★' : '☆'}</button>
       <div class="c">${esc(j.company)}${j.remote ? ' · ' + esc(j.remote) : ''}</div>
       <div class="badges">
         ${j.id === S.fresh ? '<span class="badge new">just added</span>' : ''}
@@ -705,6 +723,12 @@ document.addEventListener('click', async e => {
     if (t.dataset.view === 'resume') loadTexts();
     if (t.dataset.view === 'sources') loadSources();
     if (t.dataset.view === 'settings') loadSettings();
+  } else if (t.classList.contains('star')) {
+    const j = S.jobs.find(x => x.id === t.dataset.id);
+    if (!j) return;
+    j.starred = !j.starred; renderList();
+    try { await api(`/api/jobs/${j.id}`, { method: 'PATCH', body: { starred: j.starred } }); }
+    catch (err) { j.starred = !j.starred; renderList(); alert(err.message); }
   } else if (t.classList.contains('setPreset')) {
     applyPreset(t.dataset.preset);
   } else if (t.id === 'saveSettings') {
@@ -857,7 +881,10 @@ document.addEventListener('change', async e => {
   }
 });
 
+$('#findInput').addEventListener('input', e => { S.find = e.target.value; renderList(); });
+
 document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && e.target.id === 'findInput') { e.target.value = S.find = ''; renderList(); }
   if (e.key === 'Enter' && e.target.classList.contains('dSkipReason')) saveSkipReason($('#detail'));
 });
 

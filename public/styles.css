@@ -71,7 +71,7 @@ input:focus, select:focus, textarea:focus { border-color: var(--accent); }
 .chip.on { background: var(--ink); color: var(--bg); border-color: var(--ink); }
 .jobList { overflow-y: auto; flex: 1; }
 .jobRow {
-  display: grid; grid-template-columns: 1fr auto; gap: 2px 10px; padding: 11px 14px; border-bottom: 1px solid var(--line);
+  display: grid; grid-template-columns: 1fr auto auto; gap: 2px 6px; padding: 11px 14px; border-bottom: 1px solid var(--line);
   cursor: pointer;
 }
 .jobRow:hover { background: var(--soft); }
@@ -86,6 +86,14 @@ input:focus, select:focus, textarea:focus { border-color: var(--accent); }
 .jobRow .c { color: var(--muted); font-size: 13px; grid-column: 1; }
 .jobRow .fit { grid-row: 1 / 3; grid-column: 2; align-self: center; }
 .jobRow .badges { grid-column: 1; display: flex; gap: 6px; margin-top: 3px; }
+.jobRow .star {
+  grid-row: 1 / 3; grid-column: 3; align-self: center; background: transparent; border: none; padding: 2px 4px;
+  font-size: 18px; line-height: 1; color: var(--low);
+}
+.jobRow .star:hover { color: var(--mid); }
+.jobRow .star.on { color: var(--mid); }
+.findRow { padding: 10px 12px 0; }
+.findRow input { width: 100%; }
 .badge { font-size: 11px; padding: 1px 7px; border-radius: 999px; background: var(--soft); color: var(--muted); }
 .badge.new { background: var(--accent); color: var(--accent-ink); }
 .fit { font-weight: 700; font-variant-numeric: tabular-nums; border-radius: 8px; padding: 3px 7px; font-size: 13px; }
