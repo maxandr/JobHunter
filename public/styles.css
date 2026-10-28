@@ -352,3 +352,27 @@ section[data-coll] > .reqBox { padding: 2px 14px 10px; }
 .reqBox > .reqHead:first-child { margin-top: 8px; }
 section[data-coll="notes"] textarea { display: block; width: 100%; font-size: 14px; resize: vertical; }
 .badge.loc-job { color: var(--good); } .badge.loc-country { color: var(--mid); } .badge.loc-other { color: var(--low); }
+
+/* ATS score and ATS check (lib/ats.js, public/ats-pdf.js) */
+.atsBox { font-size: 13px; line-height: 1.5; border: 1px solid var(--line); border-radius: var(--radius); padding: 12px 14px; margin: 10px 0; background: var(--panel); }
+.atsHead { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
+.atsHead .sp { flex: 1; }
+.atsBig { font-size: 30px; font-weight: 700; min-width: 48px; }
+.atsBig.good, .atsMini.good { color: var(--good); }
+.atsBig.mid, .atsMini.mid { color: var(--mid); }
+.atsBig.low, .atsMini.low { color: var(--accent); }
+.atsMini { font-weight: 700; }
+.atsRow { display: grid; grid-template-columns: minmax(0, 1fr) minmax(60px, 140px) 64px; gap: 10px; align-items: center; padding: 2px 0; }
+.atsBar { height: 7px; background: var(--soft); border-radius: 999px; overflow: hidden; }
+.atsBar i { display: block; height: 100%; border-radius: 999px; }
+.atsBar i.good { background: var(--good); } .atsBar i.mid { background: var(--mid); } .atsBar i.low { background: var(--accent); }
+.atsBox .kw { display: inline-block; margin: 2px 4px 2px 0; }
+.atsBox .kw .reqAdd { font-size: 11px; padding: 0 6px; margin-left: 4px; }
+.atsList { margin: 4px 0 8px; padding-left: 18px; }
+.atsWarn { color: var(--accent); margin-bottom: 0; }
+.atsChecks { list-style: none; margin: 4px 0 8px; padding: 0; }
+.atsChecks li { padding: 2px 0; }
+.atsChecks li b { display: inline-block; width: 16px; }
+.atsChecks .st-pass b { color: var(--good); } .atsChecks .st-warn b { color: var(--mid); } .atsChecks .st-fail b { color: var(--accent); }
+.atsText { white-space: pre-wrap; word-break: break-word; max-height: 360px; overflow: auto; background: var(--soft); padding: 8px; border-radius: 6px; font-size: 12px; }
+.atsOther { display: block; margin-top: 6px; }

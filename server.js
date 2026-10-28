@@ -302,7 +302,12 @@ async function handle(req, res) {
     if (sub === '/docs' && m === 'GET') return send(res, 200, store.docs(id));
     if (sub === '/docs' && m === 'PUT') {
       const b = await readBody(req);
-      store.saveDocs(id, { cv: b.cv, coverLetter: b.coverLetter });
+      const d = store.docs(id);
+      // An edited CV gets its ATS score and checks recomputed against the same posting keywords.
+      const meta = b.cv != null && d.meta && d.meta.jobKeywords
+        ? { ...d.meta, ...actions.atsReport(b.cv, d.base, store.readText(store.FILES.profile), d.meta.jobKeywords) }
+        : null;
+      store.saveDocs(id, { cv: b.cv, coverLetter: b.coverLetter, meta });
       return send(res, 200, { ok: true });
     }
     if (sub === '/refresh' && m === 'POST') {

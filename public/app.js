@@ -626,7 +626,7 @@ async function renderDocs(job) {
       ${meta.changes ? `<p class="muted dfWhy">${esc(meta.changes)}</p>` : ''}
       <div class="${S.diffOnly ? 'dfOnly' : ''}">${S.diffView === 'inline' ? html : renderSideBySide(d.base, d.cv)}</div>`;
   } else if (tab === 'info') {
-    content = `<div class="metaList">
+    content = `${atsBlock(meta)}<div class="metaList">
       <p><strong>What changed:</strong> ${esc(meta.changes || '—')}</p>
       <p><strong>ATS keywords covered:</strong><br>${(meta.keywords || []).map(k => `<span class="badge kw">${esc(k)}</span>`).join('') || '—'}</p>
       <p><strong>Requirements not clearly met:</strong><br>${(meta.missing || []).map(k => `<span class="badge kw">${esc(k)}</span>`).join('') || '—'}</p>
@@ -642,14 +642,46 @@ async function renderDocs(job) {
       <button class="chip ${tab === 'cv' ? 'on' : ''}" data-doc="cv">CV</button>
       <button class="chip ${tab === 'letter' ? 'on' : ''}" data-doc="letter">Cover letter</button>
       <button class="chip ${tab === 'diff' ? 'on' : ''}" data-doc="diff">Changes vs base CV</button>
-      <button class="chip ${tab === 'info' ? 'on' : ''}" data-doc="info">Keywords &amp; gaps</button>
+      <button class="chip ${tab === 'info' ? 'on' : ''}" data-doc="info">ATS score${meta.ats ? ` <span class="atsMini ${atsTone(meta.ats.cv.overall)}">${meta.ats.cv.overall}</span>` : ''}</button>
       <span class="sp"></span>
       ${tab !== 'info' && tab !== 'diff' ? `
         <button data-act="edit">${S.editing ? 'Save' : 'Edit'}</button>
         <button data-act="copy">Copy</button>
-        ${tab === 'cv' ? '<button data-act="pdf">.pdf</button><button data-act="download">.md</button><button data-act="print">Print</button>'
+        ${tab === 'cv' ? '<button data-act="pdf">.pdf</button><button data-act="atscheck" title="Makes the PDF and shows what an ATS (applicant tracking system) reads from it">ATS check</button><button data-act="download">.md</button><button data-act="print">Print</button>'
           : '<button data-act="download">.txt</button>'}` : ''}
     </div>${content}`;
+}
+
+const atsTone = n => n >= 75 ? 'good' : n >= 50 ? 'mid' : 'low';
+const ATS_PARTS = [['keyword', 'Posting keywords', 40], ['skills', 'Required & preferred skills', 20],
+  ['title', 'Job title in the header', 15], ['sections', 'Sections & contacts', 15], ['dates', 'Date format', 10]];
+
+// ATS score (computed by code, see lib/ats.js): base resume → tailored CV, parts, missing keywords, flags.
+function atsBlock(meta) {
+  if (!meta.ats) return '<p class="muted">Re-generate this CV to get the ATS score.</p>';
+  const { base, cv } = meta.ats;
+  const bar = (k, label, w) => {
+    const v = cv.sub[k];
+    const was = base.sub[k];
+    return `<div class="atsRow"><span>${label} <span class="muted small">${w}%</span></span>
+      ${v == null ? '<span class="muted small">n/a</span>' : `<span class="atsBar"><i class="${atsTone(v)}" style="width:${v}%"></i></span>
+      <span class="small">${was != null && was !== v ? `<span class="muted">${was} → </span>` : ''}${v}</span>`}</div>`;
+  };
+  const kws = list => list.map(k => `<span class="badge kw">${esc(k)}</span>`).join('');
+  const missing = cv.missing.map(k => S.addedSkills?.includes(k) ? `<span class="badge kw">${esc(k)} ✓</span>`
+    : `<span class="badge kw">${esc(k)} <button class="ghost reqAdd" data-skill="${esc(k)}" title="Adds it to your profile so Claude can use it in CVs">I have this</button></span>`).join('');
+  return `<div class="atsBox">
+    <div class="atsHead"><span class="atsBig ${atsTone(cv.overall)}">${cv.overall}</span>
+      <span>ATS match for this posting<br><span class="muted small">base resume ${base.overall} → tailored CV ${cv.overall}${meta.passes === 2 ? ' · checked and fixed in a second pass' : ''}</span></span></div>
+    ${ATS_PARTS.map(p => bar(...p)).join('')}
+    ${meta.warnings?.length ? `<p class="atsWarn"><strong>Not in your base resume or profile — check these:</strong></p><ul class="atsList">${meta.warnings
+      .map(w => `<li><strong>${w.kind === 'number' ? 'number' : 'skill'} “${esc(w.value)}”</strong> <span class="muted">${esc(w.line)}</span></li>`).join('')}</ul>` : ''}
+    ${cv.missing.length ? `<p><strong>Posting keywords the CV doesn't show:</strong><br>${missing}</p>` : ''}
+    ${cv.injectable.length ? `<p><strong>You have these but the CV doesn't show them:</strong><br>${kws(cv.injectable)}</p>` : ''}
+    ${cv.tips.length ? `<ul class="atsList">${cv.tips.map(t => `<li>${esc(t)}</li>`).join('')}</ul>` : ''}
+    ${meta.writing?.length ? `<p><strong>Style notes:</strong></p><ul class="atsList">${meta.writing
+      .map(w => `<li><strong>${esc(w.kind)}:</strong> <span class="muted">${esc(w.line)}</span></li>`).join('')}</ul>` : ''}
+  </div>`;
 }
 
 function download(name, text) {
@@ -687,6 +719,17 @@ async function downloadPdf(text, btn) {
     setTimeout(() => URL.revokeObjectURL(a.href), 1000);
   } catch (err) { alert('PDF export failed: ' + err.message); }
   btn.disabled = false; btn.textContent = '.pdf';
+}
+
+// Shows the ATS check of a PDF (public/ats-pdf.js) under the document tabs.
+async function showAtsPdf(data, name) {
+  const kw = S.docs?.meta?.jobKeywords || {};
+  const keywords = [...(kw.required_skills || []), ...(kw.preferred_skills || []), ...(kw.keywords || [])];
+  const r = await atsPdf.check(data, { keywords, markdown: S.docs?.cv || '' });
+  const body = $('#detail .docsBody');
+  if (!body) return;
+  body.querySelector('.atsPdf')?.remove();
+  body.querySelector('.docTabs').insertAdjacentHTML('afterend', atsPdf.render(r, name));
 }
 
 function printCv(text) {
@@ -834,6 +877,16 @@ document.addEventListener('click', async e => {
       printCv(text);
     } else if (t.dataset.act === 'pdf') {
       await downloadPdf(text, t);
+    } else if (t.dataset.act === 'atscheck') {
+      t.disabled = true; t.textContent = 'Checking…';
+      try {
+        const r = await fetch('/api/pdf', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ html: cvPage(text).html }) });
+        if (!r.ok) throw new Error((await r.json().catch(() => ({}))).error || r.statusText);
+        await showAtsPdf(await r.arrayBuffer(), 'the tailored CV PDF');
+      } catch (err) { alert('ATS check failed: ' + err.message); }
+      t.disabled = false; t.textContent = 'ATS check';
+    } else if (t.dataset.act === 'atsclose') {
+      t.closest('.atsPdf').remove();
     } else if (t.dataset.act === 'edit') {
       if (S.editing) {
         const val = $('#detail .docEdit').value;
@@ -867,6 +920,12 @@ document.addEventListener('click', async e => {
 });
 
 document.addEventListener('change', async e => {
+  if (e.target.dataset.act === 'atsfile') {
+    const file = e.target.files[0];
+    if (!file) return;
+    try { await showAtsPdf(await file.arrayBuffer(), file.name); } catch (err) { alert('ATS check failed: ' + err.message); }
+    return;
+  }
   if (e.target.id === 'dfOnly') {
     S.diffOnly = e.target.checked;
     const box = e.target.closest('.docsBody').querySelector('.df, .sx');
