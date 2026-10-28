@@ -65,8 +65,9 @@ input:focus, select:focus, textarea:focus { border-color: var(--accent); }
 .listPane { border-right: 1px solid var(--line); display: flex; flex-direction: column; min-height: 0; }
 .addForm { display: flex; gap: 6px; padding: 12px; border-bottom: 1px solid var(--line); }
 .addForm input { flex: 1; min-width: 0; }
-.filters { display: flex; gap: 8px; padding: 10px 12px; align-items: center; border-bottom: 1px solid var(--line); }
-.chips { display: flex; gap: 4px; flex-wrap: wrap; flex: 1; }
+.filters { display: flex; flex-wrap: wrap; gap: 8px; padding: 10px 12px; align-items: center; border-bottom: 1px solid var(--line); }
+.chips { display: flex; gap: 4px; flex-wrap: wrap; flex: 1 1 100%; }
+.filters select { flex: 1 1 0; min-width: 0; }
 .chip { padding: 3px 9px; border-radius: 999px; font-size: 12px; background: transparent; }
 .chip.on { background: var(--ink); color: var(--bg); border-color: var(--ink); }
 .jobList { overflow-y: auto; flex: 1; }
@@ -97,6 +98,19 @@ input:focus, select:focus, textarea:focus { border-color: var(--accent); }
 .findRow input { width: 100%; }
 .badge { font-size: 11px; padding: 1px 7px; border-radius: 999px; background: var(--soft); color: var(--muted); }
 .badge.new { background: var(--accent); color: var(--accent-ink); }
+.badge.st-interested { background: #d6e6ff; color: #1652c4; }
+.badge.st-applied { background: #7a3fd8; color: #fff; }
+.badge.st-interview { background: #ffe58a; color: #5e4400; }
+.badge.st-offer { background: #1f9a55; color: #fff; }
+.badge.st-rejected { background: #ffd9d6; color: #b3261e; }
+.badge.st-skip { background: var(--soft); color: var(--low); text-decoration: line-through; }
+@media (prefers-color-scheme: dark) {
+  .badge.st-interested { background: #17325e; color: #9cc3ff; }
+  .badge.st-applied { background: #8f5cf0; color: #fff; }
+  .badge.st-interview { background: #f2c94c; color: #2a1f00; }
+  .badge.st-offer { background: #34b56d; color: #06210f; }
+  .badge.st-rejected { background: #4a1c19; color: #ff9b92; }
+}
 .fit { font-weight: 700; font-variant-numeric: tabular-nums; border-radius: 8px; padding: 3px 7px; font-size: 13px; }
 .fit.hi { color: var(--good); } .fit.mid { color: var(--mid); } .fit.lo { color: var(--low); }
 .listEmpty { padding: 30px 16px; color: var(--muted); text-align: center; }

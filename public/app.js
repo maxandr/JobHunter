@@ -189,14 +189,22 @@ function renderList() {
       <div class="c">${esc(j.company)}${j.remote ? ' · ' + esc(j.remote) : ''}</div>
       <div class="badges">
         ${j.id === S.fresh ? '<span class="badge new">just added</span>' : ''}
-        ${j.status === 'new' ? '<span class="badge new">new</span>' : `<span class="badge">${statusLabel(j.status)}</span>`}
+        ${statusBadge(j)}
         <span class="badge ${ageDays(j.posted) == null ? 'warn' : ''}" title="${esc(j.posted ? 'Posted ' + j.posted : 'Posting date unknown')}">${ageText(ageDays(j.posted))}</span>
         ${salaryBadge(j)}
-        ${j.status === 'applied' && j.appliedAt ? `<span class="badge" title="Applied ${esc(j.appliedAt.slice(0, 10))}">applied ${ageText(ageDays(j.appliedAt))}</span>` : ''}
         ${j.hasDocs ? '<span class="badge">CV ready</span>' : ''}
         ${j.source ? `<span class="badge">${esc(j.source.length > 22 ? j.source.slice(0, 21) + "…" : j.source)}</span>` : ''}
       </div>
     </div>`).join('');
+}
+
+// Colored status tag; an Applied tag carries its date, e.g. "Applied Oct 25"
+function statusBadge(j) {
+  if (j.status === 'new') return '<span class="badge new">new</span>';
+  const on = j.status === 'applied' && j.appliedAt ? new Date(j.appliedAt) : null;
+  const when = on && !isNaN(on) ? ' ' + on.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '';
+  const tip = when ? ` title="Applied ${esc(j.appliedAt.slice(0, 10))}"` : '';
+  return `<span class="badge st-${esc(j.status)}"${tip}>${statusLabel(j.status)}${when}</span>`;
 }
 
 // ---------- salary: the posting's own range, or Claude's market estimate when the posting has no figure ----------
