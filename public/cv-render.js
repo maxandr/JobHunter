@@ -77,6 +77,19 @@
 .cv-list li{margin:0}
 .cv-p{margin:4px 0}`;
 
+  // Full standalone A4 page for printing and PDF. The server loads this file too (lib/pdf.js) to count pages.
+  function cvPage(text) {
+    const name = ((String(text || '').match(/^#\s+(.+)$/m) || [, ''])[1].replace(/[*_]/g, '').trim()) || 'My';
+    const title = `${name} CV`;
+    return { title, html: `<!doctype html><html><head><meta charset="utf-8"><title>${esc(title)}</title>
+    <style>${CV_CSS}
+    body{margin:0}.cv{max-width:none}
+    @page{size:A4;margin:18mm 18mm 16mm;@top-left{content:''}@top-center{content:''}@top-right{content:''}@bottom-left{content:''}@bottom-center{content:''}@bottom-right{content:''}}
+    .cv-section,.cv-job{break-after:avoid}.cv-list li{break-inside:avoid}
+    *{-webkit-print-color-adjust:exact;print-color-adjust:exact}</style></head><body>${renderCv(text)}</body></html>` };
+  }
+
   window.renderCv = renderCv;
   window.CV_CSS = CV_CSS;
+  window.cvPage = cvPage;
 })();

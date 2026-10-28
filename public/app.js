@@ -694,17 +694,8 @@ function download(name, text) {
   setTimeout(() => URL.revokeObjectURL(a.href), 1000);
 }
 
-// Full standalone CV page, used for printing and for the PDF download.
-function cvPage(text) {
-  const name = ((text.match(/^#\s+(.+)$/m) || [, ''])[1].replace(/[*_]/g, '').trim()) || 'My';
-  const title = `${name} CV`;
-  return { title, html: `<!doctype html><html><head><meta charset="utf-8"><title>${esc(title)}</title>
-    <style>${CV_CSS}
-    body{margin:0}.cv{max-width:none}
-    @page{size:A4;margin:18mm 18mm 16mm;@top-left{content:''}@top-center{content:''}@top-right{content:''}@bottom-left{content:''}@bottom-center{content:''}@bottom-right{content:''}}
-    .cv-section,.cv-job{break-after:avoid}.cv-list li{break-inside:avoid}
-    *{-webkit-print-color-adjust:exact;print-color-adjust:exact}</style></head><body>${renderCv(text)}</body></html>` };
-}
+// Full standalone CV page, used for printing and for the PDF download (built in cv-render.js).
+const cvPage = text => window.cvPage(text);
 
 async function downloadPdf(text, btn) {
   const { title, html } = cvPage(text);

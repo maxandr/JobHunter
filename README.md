@@ -83,6 +83,7 @@
 | `searchTimeoutMinutes` | Таймаут поиска. |
 | `timeouts` | Таймаут в минутах для остальных действий: `analyze`, `tailor`, `people`, `apply`, `resume`. |
 | `resumeSyncOnStart` | Проверять резюме на Google Drive при каждом запуске (`true`/`false`). |
+| `cvTwoPages` | Всегда умещать адаптированное CV на 2 страницы (`true`/`false`, по умолчанию `false`). Generate делает PDF, считает страницы и, если их больше, просит Claude сократить CV (+1–2 минуты). |
 | `autoSearch` | Автопоиск, пока сервер запущен: `enabled`, `everyHours`, `maxAgeDays`, `sourcesOnly`. |
 | `languages` | Язык текстов: `cv` (резюме), `letter` (письмо), `messages` (записки в LinkedIn), `forms` (ответы в формах). `"auto"` — язык вакансии, иначе название языка, например `"English"`. По умолчанию резюме и формы на английском, письмо и записки — на языке вакансии. Для одного CV язык можно выбрать в «Options» над кнопкой Generate. |
 | `applyBrowserBin`, `browserBin`, `applyBrowserPort` | Браузер для заполнения форм, браузер для PDF, порт отладки браузера форм. |

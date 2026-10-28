@@ -107,9 +107,13 @@
       l.startsWith(n) && (l.length === n.length || /^\s*(?:[^\p{L}\p{N}\s]|and\s|и\s)/u.test(l.slice(n.length))))));
   }
 
-  // Same whole-word match as lib/ats.js keywordInText.
+  // Same match as lib/ats.js keywordInText: whole word, spacing / hyphens / camelCase / plural don't matter.
   function keywordIn(kw, text) {
-    const body = String(kw).trim().toLowerCase().split(/[\s-]+/).map(s => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('[\\s-]+');
+    const escRe = s => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const words = String(kw).trim().replace(/(\p{Ll})(\p{Lu})/gu, '$1 $2').split(/[\s-]+/).filter(Boolean);
+    const body = words.map((w, i) => i === words.length - 1 && /^\p{L}\p{Ll}{3,}$/u.test(w)
+      ? escRe(w.toLowerCase().replace(/(?<!s)s$/, '')) + '(?:e?s)?'
+      : i === words.length - 1 && /^\p{Lu}{2,}$/u.test(w) ? escRe(w.toLowerCase()) + 's?' : escRe(w.toLowerCase())).join('[\\s-]*');
     return !!body && new RegExp(`(?<![\\p{L}\\p{N}+#])${body}(?![\\p{L}\\p{N}+#])`, 'u').test(text.toLowerCase().replace(/\s+/g, ' '));
   }
 
