@@ -37,7 +37,7 @@ What it does:
   looks for numbers and skills that are not in your base resume and profile, and for job keywords you have but that didn't make it into the CV.
   If anything is found, Claude does a short second pass to fix it (about +1 minute). The same pass rewrites
   weak bullets ("Worked on…", first person, too long). If a number disappears or something made up appears after the second pass,
-  the first version is kept. The letter opens with a plain "Hello,".
+  the first version is kept. The letter opens with "Hello <Company>," and keeps a plain, matter-of-fact tone (no flattery or eagerness).
 - **ATS score** — a tab next to the resume: how well the CV matches the job for an applicant tracking system (ATS), 0–100, "base → tailored".
   It is computed by code, without Claude: job keywords (40%), skills (20%), exact job title under your name (15%), sections and contacts (15%),
   consistent date format (10%). It also lists missing keywords, tips, and, in red, things that are not in your resume (check they aren't made up).
