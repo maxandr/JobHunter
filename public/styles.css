@@ -54,6 +54,7 @@ input:focus, select:focus, textarea:focus { border-color: var(--accent); }
 .task.done .st { color: var(--good); }
 .task.cancelled .st { color: var(--muted, #888); }
 .task .taskStop { margin-left: auto; padding: 2px 10px; font-size: 12px; }
+.task .taskClose { margin-left: auto; padding: 0 8px; font-size: 12px; }
 .spinner {
   width: 10px; height: 10px; border: 2px solid var(--accent); border-right-color: transparent; border-radius: 50%;
   display: inline-block; animation: spin .8s linear infinite; margin-right: 4px;

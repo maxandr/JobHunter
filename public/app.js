@@ -10,8 +10,10 @@ S.searchAge = '30';
 S.find = ''; // text in the job search box
 S.adding = new Set(); // ids of "Add" tasks whose job should open as soon as it lands
 S.fresh = null; // the just-added job, highlighted in the list for a few seconds
+S.closedTasks = new Set(); // finished tasks closed with ✕ in the task bar
 try {
   const a = localStorage.getItem('ageFilter'); if (a !== null) S.age = a;
+  S.closedTasks = new Set(JSON.parse(localStorage.getItem('closedTasks') || '[]'));
   const sa = localStorage.getItem('searchAge'); if (sa !== null && sa !== '0') S.searchAge = sa; // "Any date" was removed
 } catch (_) { /* storage blocked */ }
 const $ = (s, r = document) => r.querySelector(s);
@@ -84,8 +86,8 @@ async function refresh() {
 
 function renderTasks() {
   const bar = $('#taskBar');
-  const recent = S.tasks.filter(t => t.status === 'running' || t.status === 'queued'
-    || (t.finishedAt && Date.now() - t.finishedAt < 60000));
+  // Finished tasks stay until closed with ✕, so the search result and its notes can be read later.
+  const recent = S.tasks.filter(t => t.status === 'running' || t.status === 'queued' || !S.closedTasks.has(t.id));
   bar.classList.toggle('hidden', !recent.length);
   bar.innerHTML = recent.slice(0, 4).map(t => {
     let info = '';
@@ -106,8 +108,9 @@ function renderTasks() {
     if (t.status === 'failed') info =`<span>${esc(t.error)}</span>`;
     const st = t.status === 'running' ? '<span class="spinner"></span>Working' : t.status === 'queued' ? 'Queued'
       : t.status === 'done' ? 'Done' : t.status === 'cancelled' ? 'Stopped' : 'Failed';
-    const stop = t.status === 'running' || t.status === 'queued' ? `<button class="ghost taskStop" data-task="${t.id}">Stop</button>` : '';
-    return `<div class="task ${t.status}"><span class="st">${st}</span><span>${esc(t.label)}</span>${info}${stop}</div>`;
+    const stop = t.status === 'running' || t.status === 'queued' ? `<button class="ghost taskStop" data-task="${t.id}">Stop</button>`
+      : `<button class="ghost taskClose" data-task="${t.id}" title="Close">✕</button>`;
+    return `<div class="task ${t.status}" title="${esc(t.log.join('\n'))}"><span class="st">${st}</span><span>${esc(t.label)}</span>${info}${stop}</div>`;
   }).join('');
   $('#searchBtn').disabled = S.tasks.some(t => t.kind === 'search' && (t.status === 'running' || t.status === 'queued'));
 }
@@ -761,6 +764,12 @@ document.addEventListener('click', async e => {
     t.disabled = true; t.textContent = 'Stopping…';
     try { await api(`/api/tasks/${t.dataset.task}/cancel`, { method: 'POST' }); } catch (err) { alert(err.message); }
     refresh();
+  } else if (t.classList.contains('taskClose')) {
+    S.closedTasks.add(t.dataset.task);
+    // Only ids the server still has are worth keeping (it holds the last 50 tasks, new ids after a restart).
+    S.closedTasks = new Set([...S.closedTasks].filter(id => S.tasks.some(x => x.id === id)));
+    try { localStorage.setItem('closedTasks', JSON.stringify([...S.closedTasks])); } catch (_) { /* storage blocked */ }
+    renderTasks();
   } else if (t.classList.contains('tab')) {
     document.querySelectorAll('.tab').forEach(b => b.classList.toggle('active', b === t));
     $('#viewJobs').classList.toggle('hidden', t.dataset.view !== 'jobs');
