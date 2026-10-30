@@ -9,7 +9,8 @@ const store = require('./lib/store');
 const actions = require('./lib/actions');
 const apply = require('./lib/apply');
 const { syncResume, draftProfile } = require('./lib/resume-sync');
-const { taskContext, resetClaude, claudeVersion } = require('./lib/claude');
+const { taskContext, resetClaude, claudeVersion, checkPerplexity, perplexityStatus } = require('./lib/claude');
+const setup = require('./lib/setup');
 const { htmlToPdf, findBrowser } = require('./lib/pdf');
 const { findBoard } = require('./lib/ats-boards');
 const { isLinkedInSearch, searchName } = require('./lib/linkedin');
@@ -27,7 +28,7 @@ try {
 // Short tasks go first, so a pasted link doesn't wait behind a 20-minute search.
 const PRIORITY = { apply: 0, analyze: 1, refresh: 1, tailor: 1, people: 1, resume: 2, search: 3 };
 // These never run twice at once: two searches would find the same jobs, two form fills would fight over one browser.
-const ONE_AT_A_TIME = new Set(['search', 'apply', 'resume']);
+const ONE_AT_A_TIME = new Set(['search', 'apply', 'resume', 'setup']);
 const tasks = [];
 let running = 0;
 
@@ -250,7 +251,8 @@ async function handle(req, res) {
     let pdfBrowser = '';
     try { pdfBrowser = findBrowser(); } catch (_) { /* none found */ }
     return send(res, 200, { config: store.config(), actions: store.ACTIONS, browsers: apply.detectBrowsers(), pdfBrowser,
-      runningPort: config.port, supervised: !!process.env.JOB_HUNTER_SUPERVISED, nextAutoSearchAt: nextAutoSearchAt() });
+      runningPort: config.port, supervised: !!process.env.JOB_HUNTER_SUPERVISED, nextAutoSearchAt: nextAutoSearchAt(),
+      perplexity: perplexityStatus() });
   }
   if (p === '/api/settings' && m === 'PUT') {
     const before = store.config();
@@ -262,8 +264,16 @@ async function handle(req, res) {
   }
   if (p === '/api/settings/test-claude' && m === 'POST') {
     resetClaude();
-    return send(res, 200, await claudeVersion(store.config().claudeBin));
+    const bin = store.config().claudeBin;
+    const r = await claudeVersion(bin);
+    return send(res, 200, r.ok ? { ...r, perplexity: await checkPerplexity(bin) } : r);
   }
+  if (p === '/api/setup' && m === 'GET') return send(res, 200, await setup.status());
+  if (p === '/api/setup/install-claude' && m === 'POST') {
+    const t = enqueue('setup', 'Installing Claude Code', log => setup.installClaude(log));
+    return send(res, 202, publicTask(t));
+  }
+  if (p === '/api/setup/login' && m === 'POST') return send(res, 200, setup.openLogin());
   if (p === '/api/usage' && m === 'GET') {
     const days = Math.max(1, Math.min(365, Number(url.searchParams.get('days')) || 30));
     return send(res, 200, { days, rows: usageSummary(days) });
@@ -431,6 +441,8 @@ server.on('listening', () => {
   if (config.resumeSyncOnStart && (config.resumeDrive || config.resumePdfPath)) {
     enqueue('resume', 'Checking the resume PDF for changes', log => syncResume({ onLog: log }));
   }
+  // Find out if the claude.ai account has Perplexity, so runs don't offer Claude a tool it doesn't have.
+  checkPerplexity(config.claudeBin);
   setInterval(autoSearchTick, 60000);
   setTimeout(autoSearchTick, 15000);
   if (process.argv.includes('--open')) openBrowser();

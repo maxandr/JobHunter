@@ -127,7 +127,8 @@ and Claude then opens each one via WebFetch and verifies it. When analyzing a jo
 helps if the job page doesn't open.
 
 It works through the Perplexity connector in your claude.ai account (the same one Claude Code is logged in with),
-so no API key is needed. To turn it off: `"perplexity": false` in `config.json`.
+so no API key is needed. To turn it off: `"perplexity": false` in `config.json`. On start (and on "Test Claude")
+the app checks `claude mcp list`; if the connector isn't there, runs go without it and Settings says so.
 
 If you don't have the connector in claude.ai, you can connect Perplexity with your own API key (paid, separate from the subscription):
 

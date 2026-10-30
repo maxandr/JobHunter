@@ -16,6 +16,7 @@
     <button class="tab" data-view="resume">Resume &amp; profile</button>
     <button class="tab" data-view="sources">Extra sources</button>
     <button class="tab" data-view="settings">Settings</button>
+    <button class="tab hidden" data-view="setup" id="setupTab">Setup<span class="setupDot" aria-hidden="true"></span></button>
   </nav>
   <div class="searchGroup">
     <select id="searchAge" aria-label="Find postings published within" title="Only look for postings published within this period">
@@ -69,7 +70,7 @@
 <main id="viewResume" class="view hidden">
   <div class="texts">
     <section>
-      <h2>Base resume <button id="syncResume" class="ghost" style="float:right;font-size:12px" title="Download the resume again (Google Drive link or local PDF from Settings) and convert it">Update</button></h2>
+      <h2>Base resume <button id="syncResume" style="float:right;font-size:12px" title="Download the resume again (Google Drive link or local PDF from Settings) and convert it">↻ Update</button></h2>
       <p class="muted">Updated automatically at every start from the Google Drive link or local PDF set in Settings (only if the PDF changed). Edits here are overwritten by the next PDF change — edit the source document instead.</p>
       <textarea id="resumeText" spellcheck="false"></textarea>
     </section>
@@ -126,6 +127,15 @@
   </div>
 </main>
 
+<main id="viewSetup" class="view hidden">
+  <div class="sourcesWrap settingsWrap setupWrap">
+    <h1>Set up Job Hunter</h1>
+    <p class="muted">Job Hunter asks Claude Code (with your claude.ai subscription) to find and score jobs and write CVs. Three steps:</p>
+    <ol id="setupSteps" class="setupSteps"><li class="muted">Checking…</li></ol>
+    <div class="testRow"><button id="setupCheck">Check again</button><span id="setupMsg" class="muted"></span></div>
+  </div>
+</main>
+
 <main id="viewSettings" class="view hidden">
   <div class="sourcesWrap settingsWrap">
     <section class="setBox">
@@ -163,6 +173,7 @@
         <label class="field">Claude runs at once<input type="number" min="1" max="6" data-key="maxParallel"></label>
       </div>
       <label class="check"><input type="checkbox" data-key="perplexity"> Use Perplexity from your claude.ai account (search, salary estimates, people)</label>
+      <div id="perplexityNote" class="muted small"></div>
       <label class="check"><input type="checkbox" data-key="linkedin"> Search LinkedIn by your “Look for” words (Extra sources tab), in your country and worldwide — free, no login</label>
     </section>
 
@@ -179,7 +190,7 @@
     </section>
 
     <section class="setBox">
-      <h2>Resume <button id="syncResumeSet" class="ghost" style="float:right;font-size:12px" title="Save settings, then download the resume again from the link or PDF below and convert it">Update</button></h2>
+      <h2>Resume <button id="syncResumeSet" style="float:right;font-size:12px" title="Save settings, then download the resume again from the link or PDF below and convert it">↻ Update</button></h2>
       <div class="setGrid wide">
         <label class="field">Google Doc / Drive link<input data-key="resumeDrive" placeholder="https://docs.google.com/document/d/…"></label>
         <label class="field">Or a local PDF (overrides the link)<input data-key="resumePdfPath" placeholder="C:\Users\you\resume.pdf"></label>
@@ -205,7 +216,7 @@
         <label class="field">MCP config file (e.g. Perplexity with your own API key)<input data-key="mcpConfig" placeholder="mcp-perplexity.json"></label>
         <label class="field">Extra allowed tools, comma-separated<input data-key="extraAllowedTools" placeholder="mcp__perplexity"></label>
       </div>
-      <div class="testRow"><button id="testClaude">Test Claude</button><span id="testClaudeMsg" class="muted"></span></div>
+      <div class="testRow"><button id="testClaude">Test Claude</button><button id="openSetup" class="ghost">Setup…</button><span id="testClaudeMsg" class="muted"></span></div>
     </section>
 
     <section class="setBox">

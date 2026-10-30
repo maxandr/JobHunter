@@ -806,6 +806,8 @@ document.addEventListener('click', async e => {
     $('#viewResume').classList.toggle('hidden', t.dataset.view !== 'resume');
     $('#viewSources').classList.toggle('hidden', t.dataset.view !== 'sources');
     $('#viewSettings').classList.toggle('hidden', t.dataset.view !== 'settings');
+    $('#viewSetup').classList.toggle('hidden', t.dataset.view !== 'setup');
+    if (t.dataset.view === 'setup') loadSetup();
     if (t.dataset.view === 'resume') loadTexts();
     if (t.dataset.view === 'sources') loadSources();
     if (t.dataset.view === 'settings') loadSettings();
@@ -830,9 +832,37 @@ document.addEventListener('click', async e => {
     try {
       const r = await api('/api/settings/test-claude', { method: 'POST' });
       $('#testClaudeMsg').textContent = r.ok ? `OK: ${r.version}` : `Failed (${r.cmd}): ${r.error}`;
+      if (r.perplexity) renderPerplexity(r.perplexity);
       $('#testClaudeMsg').className = r.ok ? 'okText' : 'errText';
     } catch (err) { $('#testClaudeMsg').textContent = err.message; $('#testClaudeMsg').className = 'errText'; }
     t.disabled = false;
+  } else if (t.id === 'openSetup') {
+    $('#setupTab').classList.remove('hidden'); $('#setupTab').click();
+  } else if (t.id === 'setupCheck') {
+    loadSetup();
+  } else if (t.id === 'setupInstall') {
+    t.disabled = true;
+    try { await api('/api/setup/install-claude', { method: 'POST' }); await refresh(); loadSetup(); }
+    catch (err) { setupMsg(err.message, true); t.disabled = false; }
+  } else if (t.id === 'setupLogin') {
+    try {
+      const r = await api('/api/setup/login', { method: 'POST' });
+      if (!r.ok) return setupMsg(r.error, true);
+      SETUP.loginAt = Date.now();
+      setupMsg('A window opened: sign in to claude.ai through the link it shows, then come back here.');
+      loadSetup();
+    } catch (err) { setupMsg(err.message, true); }
+  } else if (t.id === 'setupResume') {
+    const v = $('#setupResumeInput').value.trim().replace(/^"|"$/g, '');
+    if (!v) return setupMsg('Paste a Google Doc / Drive link or the path to your resume PDF.', true);
+    const body = /^https?:\/\//i.test(v) ? { resumeDrive: v, resumePdfPath: '' } : { resumePdfPath: v };
+    t.disabled = true;
+    try {
+      await api('/api/settings', { method: 'PUT', body });
+      await api('/api/resume/sync', { method: 'POST' });
+      setupMsg('Reading your resume, takes a minute or two.');
+      await refresh(); loadSetup();
+    } catch (err) { setupMsg(err.message, true); t.disabled = false; }
   } else if (t.id === 'saveFilter') {
     const f = await api('/api/sources/filter', { method: 'PUT',
       body: { include: $('#filterInclude').value, exclude: $('#filterExclude').value } });
@@ -1178,6 +1208,14 @@ async function saveSettings(obj) {
   } catch (err) { setMsg(err.message, true); }
 }
 
+// found: true / false, or null while the app hasn't checked yet.
+function renderPerplexity(p) {
+  $('#perplexityNote').textContent = !p || p.found == null ? ''
+    : p.found ? 'Perplexity is connected in your claude.ai account.'
+    : 'Perplexity is not connected in your claude.ai account, so Claude searches without it. '
+      + 'To add it: claude.ai → Settings → Connectors → Perplexity, then press “Test Claude” below.';
+}
+
 function renderAutoNext(at) {
   if (!at) { $('#autoNext').textContent = 'Auto search is off.'; return; }
   const min = Math.round((at - Date.now()) / 60000);
@@ -1204,6 +1242,7 @@ async function loadSettings() {
     SET.cfg = s.config; SET.actions = s.actions;
     fillSettings(s.config);
     renderAutoNext(s.nextAutoSearchAt);
+    renderPerplexity(s.perplexity);
     $('#browserList').innerHTML = s.browsers.map(b =>
       `<span class="badge ${b.path ? 'okBadge' : ''}" title="${esc(b.path || 'not found')}">${esc(b.name)}${b.path ? ' ✓' : ' —'}</span>`).join('')
       + `<span class="muted small">PDF: ${esc(s.pdfBrowser || 'no Edge / Chrome found')}</span>`;
@@ -1220,6 +1259,60 @@ document.addEventListener('input', e => {
   if (e.target.id === 'usageDays') return loadUsage();
   setMsg('Unsaved changes');
 });
+
+// ---------- Setup tab: Claude Code installed and logged in, resume in ----------
+const SETUP = { loginAt: 0 };
+function setupMsg(text, err) { $('#setupMsg').textContent = text; $('#setupMsg').className = err ? 'errText' : 'muted'; }
+const busyTask = kind => S.tasks.find(x => x.kind === kind && (x.status === 'running' || x.status === 'queued'));
+
+async function loadSetup() {
+  clearTimeout(loadSetup.t);
+  let st;
+  try { st = await api('/api/setup'); } catch (err) { return setupMsg(err.message, true); }
+  showSetupTab(st);
+  const installing = busyTask('setup'), reading = busyTask('resume');
+  const lastInstall = S.tasks.find(x => x.kind === 'setup');
+  const step = (ok, title, body) => `<li class="${ok ? 'ok' : ''}"><h3>${title}</h3>${body}</li>`;
+  const claudeBody = st.claude.ok ? `<p class="muted">${esc(st.claude.version)} · ${esc(st.claude.cmd)}</p>`
+    : installing ? '<p><span class="spinner"></span>Installing… (a minute or two)</p>'
+    : `<p class="muted">Not found${st.claude.error ? ': ' + esc(st.claude.error) : ''}</p>
+      ${lastInstall && lastInstall.status === 'failed' ? `<p class="errText">${esc(lastInstall.error)}</p>` : ''}
+      <p class="setupAct"><button id="setupInstall" class="primary">Install Claude Code</button>
+      <span class="muted small">Runs the official installer from claude.ai. Installed somewhere else? Set its path in Settings → Claude Code.</span></p>`;
+  const authBody = !st.claude.ok ? '<p class="muted">After step 1.</p>'
+    : st.auth.loggedIn ? `<p class="muted">${esc(st.auth.email)}${st.auth.subscriptionType ? ' · ' + esc(st.auth.subscriptionType) : ''}</p>`
+    : `<p class="muted">Needs a Claude Pro or Max subscription.</p>
+      <p class="setupAct"><button id="setupLogin" class="primary">Log in</button>
+      <span class="muted small">Opens a window with a sign-in link</span></p>`;
+  const ready = st.claude.ok && st.auth.loggedIn;
+  const resumeBody = st.resume
+    ? `<p class="muted">${st.resumeSource ? 'From ' + esc(st.resumeSource) + '. ' : ''}${st.profile ? 'Check the drafted profile on the “Resume &amp; profile” tab.' : ''}</p>`
+    : reading ? '<p><span class="spinner"></span>Reading your resume…</p>'
+    : `<p class="muted">A Google Doc / Drive link shared as “Anyone with the link”, or a PDF on this computer.
+      Or paste the text on the “Resume &amp; profile” tab.</p>
+      <div class="applyRow"><input id="setupResumeInput" placeholder="https://docs.google.com/document/d/…  or  C:\\Users\\you\\resume.pdf" autocomplete="off" value="${esc(st.resumeSource)}">
+      <button id="setupResume" class="primary" ${ready ? '' : 'disabled title="After steps 1 and 2"'}>Import</button></div>`;
+  $('#setupSteps').innerHTML = step(st.claude.ok, 'Install Claude Code', claudeBody)
+    + step(st.auth.loggedIn, 'Log in to your Claude account', authBody)
+    + step(st.resume, 'Add your resume', resumeBody);
+  if (st.done) setupMsg('All set. Go to Jobs and press “Find new jobs”.');
+  else if ($('#setupMsg').textContent.startsWith('All set')) setupMsg('');
+  // Keep checking while something is in progress and the tab is open.
+  const waiting = installing || reading || (st.claude.ok && !st.auth.loggedIn && Date.now() - SETUP.loginAt < 5 * 60000);
+  if (waiting && !$('#viewSetup').classList.contains('hidden')) loadSetup.t = setTimeout(async () => { await refresh(); loadSetup(); }, 4000);
+}
+function showSetupTab(st) {
+  if (!st.done) $('#setupTab').classList.remove('hidden');
+  $('#setupTab').classList.toggle('needs', !st.done);
+}
+// On start: if something is missing, open the Setup tab.
+(async () => {
+  try {
+    const st = await api('/api/setup');
+    showSetupTab(st);
+    if (!st.done) $('#setupTab').click();
+  } catch (_) { /* server offline: refresh() shows it */ }
+})();
 
 // Resume update / profile draft run as "resume" tasks: show the new texts once they finish.
 function reloadTextsAfterResumeTasks() {
