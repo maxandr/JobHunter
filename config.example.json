@@ -6,6 +6,7 @@
   "models": { "search": "sonnet", "analyze": "sonnet", "tailor": "sonnet", "resume": "sonnet", "apply": "sonnet" },
   "effort": { "search": "medium", "analyze": "medium", "tailor": "medium", "resume": "low", "apply": "low" },
   "perplexity": true,
+  "linkedin": true,
   "mcpConfig": "",
   "extraAllowedTools": [],
   "maxJobsPerSearch": 15,

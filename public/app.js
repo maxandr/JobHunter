@@ -1010,11 +1010,11 @@ async function loadSources() {
   $('#sourceList').innerHTML = list.length ? list.map(s => `
     <div class="srcRow ${s.enabled ? '' : 'off'}">
       <input type="checkbox" class="srcOn" data-id="${esc(s.id)}" ${s.enabled ? 'checked' : ''} title="Use in search">
-      <span class="badge">${s.kind === 'telegram' ? 'Telegram' : s.kind === 'company' ? 'Company · ' + esc(ATS_LABEL[s.ats] || s.ats) : 'Site'}</span>
+      <span class="badge">${s.kind === 'telegram' ? 'Telegram' : s.kind === 'company' ? 'Company · ' + esc(ATS_LABEL[s.ats] || s.ats) : s.kind === 'linkedin' ? 'LinkedIn search' : 'Site'}</span>
       <a class="srcName" href="${esc(s.url)}" target="_blank" rel="noopener" title="${esc(s.url)}">${esc(s.kind === 'site' ? s.url : s.name)}</a>
       <input class="srcNote" data-id="${esc(s.id)}" value="${esc(s.note)}" placeholder="Note for Claude…" autocomplete="off">
       <button class="ghost srcDel" data-id="${esc(s.id)}" title="Remove">✕</button>
-    </div>`).join('') : '<div class="empty muted">No sources yet. Add a company, a job site or a Telegram channel above.</div>';
+    </div>`).join('') : '<div class="empty muted">No sources yet. Add a company, a LinkedIn search, a job site or a Telegram channel above.</div>';
 }
 const ATS_LABEL = { greenhouse: 'Greenhouse', lever: 'Lever', ashby: 'Ashby', workable: 'Workable' };
 

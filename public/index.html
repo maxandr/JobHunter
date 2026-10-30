@@ -96,9 +96,13 @@
       <code>jobs.ashbyhq.com/…</code>, <code>apply.workable.com/…</code>) or its careers page if the board is embedded there.
       The app downloads all their open postings itself, for free, and keeps those whose titles have your “Look for” words
       (and none of the “Hide” words) — Claude only scores what is left. With “Search only these sources”, if nothing is new, Claude is not run at all.</p>
+    <p class="muted">LinkedIn is searched on its own every time (Settings → Search): your “Look for” words in your country and worldwide,
+      through LinkedIn's public guest pages — no login, free; postings need one of the words in the title and none of the “Hide” words.
+      For a narrower search (other keywords, a city, a company), search on linkedin.com and paste the link from the address bar
+      (<code>linkedin.com/jobs/search/?keywords=…</code>). LinkedIn may limit requests for a while if searches run too often.</p>
     <p class="muted">Telegram: public channels only (<code>@channel</code> or <code>t.me/channel</code>) — Claude reads the latest posts from the channel's web preview.</p>
     <form id="sourceForm" class="addForm sourceForm">
-      <input id="sourceInput" placeholder="Company board (job-boards.greenhouse.io/discord), site link or @telegram_channel" autocomplete="off">
+      <input id="sourceInput" placeholder="Company board (job-boards.greenhouse.io/discord), LinkedIn search link, site link or @telegram_channel" autocomplete="off">
       <input id="sourceNote" placeholder="Note for Claude (optional), e.g. “only C++ posts”" autocomplete="off">
       <button type="submit" class="primary">Add</button>
     </form>
@@ -155,6 +159,7 @@
         <label class="field">Claude runs at once<input type="number" min="1" max="6" data-key="maxParallel"></label>
       </div>
       <label class="check"><input type="checkbox" data-key="perplexity"> Use Perplexity from your claude.ai account (search, salary estimates, people)</label>
+      <label class="check"><input type="checkbox" data-key="linkedin"> Search LinkedIn by your “Look for” words (Extra sources tab), in your country and worldwide — free, no login</label>
     </section>
 
     <section class="setBox">

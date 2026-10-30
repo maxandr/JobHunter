@@ -10,6 +10,14 @@ What it does:
   The app downloads all of the company's open postings through the platform's public API (free, no Claude tokens),
   keeps new ones whose titles have your "Look for" words and none of the "Hide" words, and only those go to Claude for scoring
   (up to 30 per company). With "Search only these sources", if nothing is new, Claude is not run at all.
+- **LinkedIn** — every search also reads LinkedIn by itself: your "Look for" words (Extra sources tab) in your country
+  ("Resume & profile" tab → "Where you live") and worldwide. The app reads the newest results and the postings themselves through
+  LinkedIn's public guest pages (no login, no Claude tokens), keeps titles with a "Look for" word and no "Hide" word,
+  drops ones already in your list or older than the search period, and sends up to 12 per search to Claude for scoring.
+  Turn it off in Settings → Search. For a narrower search, paste a linkedin.com job search link
+  (`linkedin.com/jobs/search/?keywords=...&location=...`) on the Extra sources tab (up to 25 postings from it).
+  These pages are unofficial and ignore LinkedIn's "Remote" filter (Claude checks location from the posting text);
+  if searches run too often, LinkedIn may answer "429" for a while.
 - **Extra sources** — additional (optional) job sites and Telegram channels (`@channel`, `t.me/channel`, or a link to a site/search page).
   "Find new jobs" checks them first, and the "Search only these sources" button searches only them.
   Channels must be public: Claude reads the latest posts via the `t.me/s/<channel>` web preview. The list lives in `data\sources.json`.
