@@ -18,6 +18,11 @@ store.ensure();
 // Read once at start for the port; everything else reads store.config() fresh, so the Settings tab applies at once.
 const config = store.config();
 const PUBLIC = path.join(__dirname, 'public');
+// Version in the extension folder; the page compares it with the one the browser has loaded.
+let EXTENSION_VERSION = '';
+try {
+  EXTENSION_VERSION = JSON.parse(fs.readFileSync(path.join(__dirname, 'extension', 'manifest.json'), 'utf8')).version;
+} catch (e) { console.log('Cannot read extension/manifest.json: ' + e.message); }
 
 // ---------- task queue: up to config.maxParallel claude processes at once ----------
 // Short tasks go first, so a pasted link doesn't wait behind a 20-minute search.
@@ -180,6 +185,7 @@ async function handle(req, res) {
       jobs: jobs.map(({ postingText, ...j }) => ({ ...j, hasDocs: withDocs.has(j.id) })),
       tasks: tasks.map(publicTask),
       hasResume: !!store.readText(store.FILES.resume).trim(),
+      extensionVersion: EXTENSION_VERSION,
     });
   }
 

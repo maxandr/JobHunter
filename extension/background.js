@@ -97,6 +97,15 @@ async function submit(tabId) {
   return { ...hit, check: { success: checks.some(c => c.success), stillForm: checks.some(c => c.stillForm), errors: checks.flatMap(c => c.errors) } };
 }
 
+// Content scripts reach only pages loaded after the extension started, so an app tab that was already open
+// (browser restored it at startup, or you pressed ↻ on the extension) gets the bridge here.
+async function injectBridge() {
+  const tabs = await chrome.tabs.query({ url: ['http://localhost/*', 'http://127.0.0.1/*'] });
+  for (const t of tabs) chrome.scripting.executeScript({ target: { tabId: t.id }, files: ['bridge.js'] }).catch(() => {});
+}
+chrome.runtime.onInstalled.addListener(injectBridge);
+chrome.runtime.onStartup.addListener(injectBridge);
+
 chrome.runtime.onMessage.addListener((msg, sender, reply) => {
   const h = handlers[msg && msg.cmd];
   if (!h || !sender.tab) return false;

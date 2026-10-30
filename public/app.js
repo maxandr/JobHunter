@@ -298,8 +298,19 @@ async function applyJob(job, open, submit = false) {
     const d = await api(`/api/jobs/${job.id}/docs`);
     if (d.cv) html = cvPage(d.cv).html;
   }
-  if (hasExtension()) return applyWithExtension(job, open, url, html, submit);
-  const task = await api(`/api/jobs/${job.id}/apply`, { method: 'POST', body: { open, url, html, submit, browser: await browserKind() } });
+  const kind = await browserKind();
+  if (hasExtension()) {
+    // A reloaded extension can leave this page talking to nobody; better to say so than to wait forever.
+    try { await ext('ping', {}, 3000); } catch (_) {
+      throw new Error(`The browser extension stopped responding. Open ${extensionsPage(kind)}, press ↻ on “Job Hunter form filler”, then reload this page.`);
+    }
+    return applyWithExtension(job, open, url, html, submit);
+  }
+  // Without the extension the form opens in a separate window without your logins, so ask first.
+  if (kind !== 'firefox' && !confirm(`The browser extension is not connected, so the form would open in a separate window without your logins.\n\n`
+    + `To fill in this browser: open ${extensionsPage(kind)}, press ↻ on “Job Hunter form filler” (or install it from the “extension” folder, see README), then reload this page.\n\n`
+    + 'Open in a separate window anyway?')) return null;
+  const task = await api(`/api/jobs/${job.id}/apply`, { method: 'POST', body: { open, url, html, submit, browser: kind } });
   refresh();
   return task;
 }
@@ -323,7 +334,9 @@ async function autoApply(job) {
     if (hasExtension()) {
       report = await applyJob(job, true, true);
     } else {
-      const done = await waitTask((await applyJob(job, true, true)).id);
+      const task = await applyJob(job, true, true);
+      if (!task) return;
+      const done = await waitTask(task.id);
       if (!done || done.status === 'cancelled') return;
       if (done.status !== 'done') throw new Error(done.error || 'Filling failed');
       report = done.result;
@@ -350,13 +363,31 @@ async function autoApply(job) {
 
 // ---------- browser extension (folder "extension"): fills forms in this browser, with your own logins ----------
 const hasExtension = () => !!document.documentElement.dataset.jhExtension;
+const EXT_PAGES = { brave: 'brave://extensions', edge: 'edge://extensions', opera: 'opera://extensions', yandex: 'browser://extensions', vivaldi: 'vivaldi://extensions' };
+const extensionsPage = kind => EXT_PAGES[kind] || 'chrome://extensions';
 
-function ext(cmd, args = {}) {
+function extHintText() {
+  if (!hasExtension()) return 'Extension not connected: the form would open in a separate window without your logins. '
+    + 'Install it from the “extension” folder (see README), or press ↻ on it in the browser’s extensions page and reload this page.';
+  const loaded = document.documentElement.dataset.jhExtension;
+  if (S.extensionVersion && loaded !== S.extensionVersion) {
+    return `Fills in this browser, but the extension is out of date (${loaded}, the folder has ${S.extensionVersion}): press ↻ on it in the browser’s extensions page.`;
+  }
+  return 'Fills in this browser (extension connected).';
+}
+
+// The extension can connect after the page has loaded (it injects itself into open app tabs when it starts).
+window.addEventListener('jh-extension', () => { const h = $('#detail .extHint'); if (h) h.textContent = extHintText(); });
+
+// timeoutMs: give up when no answer comes (an orphaned bridge never answers); 0 waits as long as the command takes.
+function ext(cmd, args = {}, timeoutMs = 0) {
   return new Promise((resolve, reject) => {
     const id = Math.random().toString(36).slice(2);
+    const timer = timeoutMs && setTimeout(() => { window.removeEventListener('message', on); reject(new Error('No answer from the extension')); }, timeoutMs);
     const on = e => {
       if (e.source !== window || !e.data || e.data.jh !== 'res' || e.data.id !== id) return;
       window.removeEventListener('message', on);
+      clearTimeout(timer);
       if (e.data.error) reject(new Error(e.data.error)); else resolve(e.data);
     };
     window.addEventListener('message', on);
@@ -482,8 +513,7 @@ async function renderDetail() {
   if (job.url) link.href = job.url; else link.remove();
   $('.dNotes', pane).value = job.notes || '';
   $('.dApplyUrl', pane).value = job.applyUrl || '';
-  $('.extHint', pane).textContent = hasExtension() ? 'Fills in this browser (extension connected).'
-    : 'Opens a separate browser window. To fill in this browser with your own logins, install the extension from the “extension” folder (see README).';
+  $('.extHint', pane).textContent = extHintText();
   renderPeople(job);
   applyCollapsed(pane, job);
   updateTailorButton();

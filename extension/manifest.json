@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "Job Hunter form filler",
-  "version": "1.1.0",
-  "description": "Fills job application forms in your own browser with answers from the local Job Hunter app. Presses Submit only when you use "Try to auto apply".",
+  "version": "1.2.0",
+  "description": "Fills job application forms in your own browser with answers from the local Job Hunter app. Presses Submit only when you use “Try to auto apply”.",
   "permissions": ["scripting", "tabs", "storage"],
   "host_permissions": ["<all_urls>"],
   "background": { "service_worker": "background.js" },

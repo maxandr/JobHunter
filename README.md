@@ -65,6 +65,9 @@ What it does:
     3. **Load unpacked** → select the `extension` folder inside job-hunter.
     4. Reload the app page. "Fills in this browser (extension connected)" appears under the buttons.
     The extension only works together with the open app page and sends nothing anywhere except your local server.
+    It connects itself to app tabs that were already open when the browser started or the extension was reloaded.
+    If it isn't connected, "Open & fill" asks before opening a separate window, and the hint under the buttons
+    says when the loaded extension is older than the `extension` folder (press ↻ on it).
   - **Without the extension** the form opens in the same browser the app is open in (Brave, Chrome, Edge, Opera, Yandex, Vivaldi;
     Firefox is not supported). You can set a different browser in `config.json`: `"applyBrowserBin": "C:\\...\\brave.exe"`.
   - This is a separate window with its own profile (`data\.browser-profile-<browser>`) — browsers don't allow controlling your main profile.
