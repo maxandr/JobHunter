@@ -17,11 +17,10 @@ const { isLinkedInSearch, searchName } = require('./lib/linkedin');
 store.ensure();
 // Read once at start for the port; everything else reads store.config() fresh, so the Settings tab applies at once.
 const config = store.config();
-const PUBLIC = path.join(__dirname, 'public');
 // Version in the extension folder; the page compares it with the one the browser has loaded.
 let EXTENSION_VERSION = '';
 try {
-  EXTENSION_VERSION = JSON.parse(fs.readFileSync(path.join(__dirname, 'extension', 'manifest.json'), 'utf8')).version;
+  EXTENSION_VERSION = JSON.parse(fs.readFileSync(path.join(store.ROOT, 'extension', 'manifest.json'), 'utf8')).version;
 } catch (e) { console.log('Cannot read extension/manifest.json: ' + e.message); }
 
 // ---------- task queue: up to config.maxParallel claude processes at once ----------
@@ -173,9 +172,10 @@ async function handle(req, res) {
   }
 
   if (!p.startsWith('/api/')) {
-    const file = path.join(PUBLIC, p === '/' ? 'index.html' : p);
-    if (!file.startsWith(PUBLIC) || !fs.existsSync(file) || fs.statSync(file).isDirectory()) return send(res, 404, 'Not found', 'text/plain');
-    return send(res, 200, fs.readFileSync(file), MIME[path.extname(file)] || 'application/octet-stream');
+    const name = p === '/' ? 'index.html' : p.slice(1);
+    const body = store.publicFile(name);
+    if (!body) return send(res, 404, 'Not found', 'text/plain');
+    return send(res, 200, body, MIME[path.extname(name)] || 'application/octet-stream');
   }
 
   if (p === '/api/state' && m === 'GET') {
@@ -405,8 +405,27 @@ const server = http.createServer((req, res) => {
   handle(req, res).catch(e => send(res, 500, { error: e.message }));
 });
 
+function openBrowser() {
+  const { exec } = require('node:child_process');
+  const u = `http://localhost:${config.port}`;
+  exec(process.platform === 'win32' ? `start "" "${u}"` : process.platform === 'darwin' ? `open ${u}` : `xdg-open ${u}`);
+}
+
+let listenTries = 0;
+server.on('error', e => {
+  if (e.code !== 'EADDRINUSE') throw e;
+  // A restarted job-hunter.exe may start before the old one has let the port go: wait a little.
+  if (process.env.JOB_HUNTER_RESTARTED && ++listenTries < 20) return setTimeout(listen, 500);
+  // Started a second time: the app is already running, just show it.
+  console.log(`Job Hunter is already running on port ${config.port}, opening it in the browser.`);
+  if (process.argv.includes('--open')) openBrowser();
+  setTimeout(() => process.exit(0), 1500);
+});
+
 // Listen only on this computer — the app uses your Claude subscription, it must not be reachable from outside.
-server.listen(config.port, '127.0.0.1', () => {
+const listen = () => server.listen(config.port, '127.0.0.1');
+listen();
+server.on('listening', () => {
   console.log(`Job Hunter is running: http://localhost:${config.port}  (type "restart" or "exit" here)`);
   // Pull the latest resume PDF on every start (Claude runs only if the PDF changed).
   if (config.resumeSyncOnStart && (config.resumeDrive || config.resumePdfPath)) {
@@ -414,11 +433,7 @@ server.listen(config.port, '127.0.0.1', () => {
   }
   setInterval(autoSearchTick, 60000);
   setTimeout(autoSearchTick, 15000);
-  if (process.argv.includes('--open')) {
-    const { exec } = require('node:child_process');
-    const u = `http://localhost:${config.port}`;
-    exec(process.platform === 'win32' ? `start "" "${u}"` : process.platform === 'darwin' ? `open ${u}` : `xdg-open ${u}`);
-  }
+  if (process.argv.includes('--open')) openBrowser();
 });
 
 // ---------- console commands (type in the server window) ----------
@@ -427,7 +442,15 @@ const RESTART_CODE = 75;
 function shutdown(code) {
   for (const t of tasks) if (t.status === 'running' && t._abort) t._abort.abort();
   server.close();
-  setTimeout(() => process.exit(code), 300);
+  setTimeout(() => {
+    // job-hunter.exe runs without start.bat, so it starts its replacement itself, in a new window.
+    if (code === RESTART_CODE && store.isSea()) {
+      require('node:child_process').exec(`start "Job Hunter" "${process.execPath}"`,
+        { env: { ...process.env, JOB_HUNTER_RESTARTED: '1' } }).on('exit', () => process.exit(0));
+      return;
+    }
+    process.exit(code);
+  }, 300);
 }
 require('node:readline').createInterface({ input: process.stdin }).on('line', line => {
   const cmd = line.trim().toLowerCase();

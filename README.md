@@ -11,12 +11,12 @@ What it does:
   keeps new ones whose titles have your "Look for" words and none of the "Hide" words, and only those go to Claude for scoring
   (up to 30 per company). With "Search only these sources", if nothing is new, Claude is not run at all.
 - **LinkedIn** — every search also reads LinkedIn by itself: your "Look for" words (Extra sources tab) in your country
-  ("Resume & profile" tab → "Where you live") and worldwide. The app reads the newest results and the postings themselves through
+  ("Resume & profile" tab → "Where you live") and worldwide (postings that mention "remote"). The app reads the newest results and the postings themselves through
   LinkedIn's public guest pages (no login, no Claude tokens), keeps titles with a "Look for" word and no "Hide" word,
   drops ones already in your list or older than the search period, and sends up to 12 per search to Claude for scoring.
   Turn it off in Settings → Search. For a narrower search, paste a linkedin.com job search link
   (`linkedin.com/jobs/search/?keywords=...&location=...`) on the Extra sources tab (up to 25 postings from it).
-  These pages are unofficial and ignore LinkedIn's "Remote" filter (Claude checks location from the posting text);
+  These pages are unofficial and ignore LinkedIn's "Remote" filter (Claude checks who can apply from the posting text);
   if searches run too often, LinkedIn may answer "429" for a while.
 - **Extra sources** — additional (optional) job sites and Telegram channels (`@channel`, `t.me/channel`, or a link to a site/search page).
   "Find new jobs" checks them first, and the "Search only these sources" button searches only them.
@@ -75,15 +75,25 @@ What it does:
 
 ## Requirements
 
-- Node.js 18+ (you already have it if you installed Claude Code via npm).
 - Claude Code logged in with your subscription: running `claude` in a terminal should work without errors.
+  The native installer doesn't need Node.js: in PowerShell run `irm https://claude.ai/install.ps1 | iex`, then `claude` once to log in.
+- Nothing else: `job-hunter.exe` is one file with everything inside (no Node.js needed).
 
 ## Getting started
 
-1. Unpack the folder wherever you like, e.g. `C:\Users\<you>\Projects\job-hunter`.
-2. Double-click **start.bat** — `http://localhost:4317` opens. Keep the console window open while you use the app.
+1. Put **job-hunter.exe** in an empty folder, e.g. `C:\Users\<you>\Documents\JobHunter`.
+2. Double-click it — `http://localhost:4317` opens in your browser. Keep its black window open while you use the app.
+   Windows may warn about an unknown app (the exe isn't signed): click "More info" → "Run anyway".
+   Your data (`data\`) and the browser extension (`extension\`) appear in the same folder.
+   Double-clicking it again while it runs just opens the page.
 3. On the **Resume & profile** tab, fill in or check your resume and profile.
 4. Click **Find new jobs**. The first search takes 3–15 minutes.
+
+### Running from source
+
+With Node.js 18+ installed, double-click **start.bat** in the source folder (it runs `node server.js`).
+To make `job-hunter.exe`, run **build.bat** (needs Node.js 20+ and internet): it makes `job-hunter.exe` in the same folder.
+The web page and the extension are built into the exe, so after changing them, run build.bat again.
 
 ## Settings (config.json)
 
