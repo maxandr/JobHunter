@@ -6,10 +6,11 @@
 <title>Job Hunter</title>
 <meta name="job-hunter" content="app">
 <link rel="stylesheet" href="styles.css">
+<script>try { const t = localStorage.getItem('theme'); if (t) document.documentElement.dataset.theme = t; } catch (_) { /* storage blocked */ }</script>
 </head>
 <body>
 <header class="top">
-  <div class="brand"><span class="logo">◆</span> Job Hunter</div>
+  <div class="brand"><span class="logo" aria-hidden="true"></span>Job Hunter</div>
   <nav class="tabs">
     <button class="tab active" data-view="jobs">Jobs</button>
     <button class="tab" data-view="resume">Resume &amp; profile</button>
@@ -25,7 +26,8 @@
       <option value="30">Last 30 days</option>
     </select>
     <button id="searchBtn" class="primary">Find new jobs</button>
-    <button id="restartBtn" class="ghost" title="Restart the server (picks up changes to config.json and the code)">↻ Restart</button>
+    <button id="themeBtn" class="ghost"></button>
+    <button id="restartBtn" class="ghost" title="Restart the server (picks up changes to config.json and the code)" aria-label="Restart the server">↻</button>
   </div>
 </header>
 
@@ -56,6 +58,7 @@
       </select>
     </div>
     <div id="jobList" class="jobList"></div>
+    <div id="listGrip" class="listGrip" title="Drag to resize, double-click to reset"></div>
   </section>
 
   <section id="detail" class="detailPane">

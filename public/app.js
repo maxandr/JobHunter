@@ -1239,6 +1239,47 @@ async function loadTexts() {
   $('#candCurrency').value = t.candidate.currency;
 }
 
+// Drag the list pane's right edge to resize it; the width is remembered. Double-click resets it.
+(function listSplitter() {
+  const view = $('#viewJobs'), grip = $('#listGrip');
+  const setW = w => view.style.setProperty('--listW', Math.round(Math.min(Math.max(w, 260), innerWidth - 360)) + 'px');
+  try { const w = +localStorage.getItem('listWidth'); if (w) setW(w); } catch (_) { /* storage blocked */ }
+  grip.addEventListener('pointerdown', e => {
+    e.preventDefault();
+    grip.setPointerCapture(e.pointerId);
+    document.body.classList.add('resizing');
+    const left = view.getBoundingClientRect().left;
+    const move = ev => setW(ev.clientX - left);
+    grip.addEventListener('pointermove', move);
+    grip.addEventListener('pointerup', () => {
+      grip.removeEventListener('pointermove', move);
+      document.body.classList.remove('resizing');
+      try { localStorage.setItem('listWidth', parseInt(view.style.getPropertyValue('--listW'))); } catch (_) { /* storage blocked */ }
+    }, { once: true });
+  });
+  grip.addEventListener('dblclick', () => {
+    view.style.removeProperty('--listW');
+    try { localStorage.removeItem('listWidth'); } catch (_) { /* storage blocked */ }
+  });
+})();
+
+// Theme button in the header: system → light → dark. The choice is applied before the page paints (inline script in index.html).
+(function themeToggle() {
+  const btn = $('#themeBtn'), root = document.documentElement;
+  const THEMES = { '': ['◐', 'Theme: system'], light: ['☀', 'Theme: light'], dark: ['☾', 'Theme: dark'] };
+  const show = () => {
+    const [icon, label] = THEMES[root.dataset.theme || ''];
+    btn.textContent = icon; btn.title = label + ' (click to switch)'; btn.setAttribute('aria-label', label);
+  };
+  btn.addEventListener('click', () => {
+    const next = { '': 'light', light: 'dark', dark: '' }[root.dataset.theme || ''];
+    if (next) root.dataset.theme = next; else delete root.dataset.theme;
+    try { next ? localStorage.setItem('theme', next) : localStorage.removeItem('theme'); } catch (_) { /* storage blocked */ }
+    show();
+  });
+  show();
+})();
+
 $('#ageSel').value = S.age;
 $('#searchAge').value = S.searchAge;
 refresh();
