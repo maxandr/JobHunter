@@ -982,6 +982,12 @@ document.addEventListener('change', async e => {
   } else if (e.target.classList.contains('srcOn')) {
     await api(`/api/sources/${e.target.dataset.id}`, { method: 'PATCH', body: { enabled: e.target.checked } });
     e.target.closest('.srcRow').classList.toggle('off', !e.target.checked);
+    syncSrcAll();
+  } else if (e.target.id === 'srcAll') {
+    const on = e.target.checked;
+    await Promise.all([...document.querySelectorAll('.srcOn')].filter(c => c.checked !== on)
+      .map(c => api(`/api/sources/${c.dataset.id}`, { method: 'PATCH', body: { enabled: on } })));
+    loadSources();
   }
 });
 
@@ -1036,7 +1042,7 @@ async function loadSources() {
   $('#filterInclude').value = f.include.join(', ');
   $('#filterExclude').value = f.exclude.join(', ');
   $('#filterMsg').textContent = '';
-  $('#searchSourcesBtn').disabled = !list.some(s => s.enabled);
+  $('#srcAllRow').classList.toggle('hidden', !list.length);
   $('#sourceList').innerHTML = list.length ? list.map(s => `
     <div class="srcRow ${s.enabled ? '' : 'off'}">
       <input type="checkbox" class="srcOn" data-id="${esc(s.id)}" ${s.enabled ? 'checked' : ''} title="Use in search">
@@ -1045,6 +1051,15 @@ async function loadSources() {
       <input class="srcNote" data-id="${esc(s.id)}" value="${esc(s.note)}" placeholder="Note for Claude…" autocomplete="off">
       <button class="ghost srcDel" data-id="${esc(s.id)}" title="Remove">✕</button>
     </div>`).join('') : '<div class="empty muted">No sources yet. Add a company, a LinkedIn search, a job site or a Telegram channel above.</div>';
+  syncSrcAll();
+}
+// The "all" box is ticked when every source is on, half-ticked when some are.
+function syncSrcAll() {
+  const boxes = [...document.querySelectorAll('.srcOn')];
+  const on = boxes.filter(c => c.checked).length;
+  $('#srcAll').checked = !!boxes.length && on === boxes.length;
+  $('#srcAll').indeterminate = on > 0 && on < boxes.length;
+  $('#searchSourcesBtn').disabled = !on;
 }
 const ATS_LABEL = { greenhouse: 'Greenhouse', lever: 'Lever', ashby: 'Ashby', workable: 'Workable' };
 
