@@ -53,7 +53,8 @@ function ageDays(posted) {
   const m = String(posted || '').match(/^(\d{4})-(\d{2})-(\d{2})/);
   if (!m) return null;
   const t = Date.UTC(+m[1], +m[2] - 1, +m[3]);
-  return Number.isNaN(t) ? null : Math.floor((Date.now() - t) / 86400000);
+  const now = new Date();
+  return Number.isNaN(t) ? null : Math.round((Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()) - t) / 86400000);
 }
 const ageText = d => d == null ? 'no date' : d <= 0 ? 'today' : d + 'd ago';
 const tooOld = j => S.age !== '' && ageDays(j.posted) > +S.age;
