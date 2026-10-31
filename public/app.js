@@ -954,6 +954,9 @@ document.addEventListener('click', async e => {
       }
       S.editing = !S.editing; renderDocs(job);
     }
+  } else if (t.classList.contains('pickResume')) {
+    $('#resumeFile').value = '';
+    $('#resumeFile').click();
   } else if (t.id === 'syncResume' || t.id === 'syncResumeSet') {
     // In Settings the link / PDF path may be unsaved yet: save first so the sync uses it.
     if (t.id === 'syncResumeSet') await saveSettings(collectSettings());
@@ -1291,7 +1294,8 @@ async function loadSetup() {
     : `<p class="muted">A Google Doc / Drive link shared as “Anyone with the link”, or a PDF on this computer.
       Or paste the text on the “Resume &amp; profile” tab.</p>
       <div class="applyRow"><input id="setupResumeInput" placeholder="https://docs.google.com/document/d/…  or  C:\\Users\\you\\resume.pdf" autocomplete="off" value="${esc(st.resumeSource)}">
-      <button id="setupResume" class="primary" ${ready ? '' : 'disabled title="After steps 1 and 2"'}>Import</button></div>`;
+      <button id="setupResume" class="primary" ${ready ? '' : 'disabled title="After steps 1 and 2"'}>Import</button>
+      <button class="pickResume" ${ready ? '' : 'disabled title="After steps 1 and 2"'}>Choose PDF…</button></div>`;
   $('#setupSteps').innerHTML = step(st.claude.ok, 'Install Claude Code', claudeBody)
     + step(st.auth.loggedIn, 'Log in to your Claude account', authBody)
     + step(st.resume, 'Add your resume', resumeBody);
@@ -1313,6 +1317,25 @@ function showSetupTab(st) {
     if (!st.done) $('#setupTab').click();
   } catch (_) { /* server offline: refresh() shows it */ }
 })();
+
+// "Choose PDF…": the browser can't tell the file's path, so the file itself goes to the server (data/resume.pdf).
+$('#resumeFile').addEventListener('change', async e => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const inSetup = !$('#viewSetup').classList.contains('hidden');
+  try {
+    const buf = new Uint8Array(await file.arrayBuffer());
+    let bin = '';
+    for (let i = 0; i < buf.length; i += 0x8000) bin += String.fromCharCode.apply(null, buf.subarray(i, i + 0x8000));
+    const r = await api('/api/resume/upload', { method: 'POST', body: { name: file.name, data: btoa(bin) } });
+    $('#viewSettings [data-key="resumePdfPath"]').value = r.resumePdfPath;
+    if (SET.cfg) SET.cfg.resumePdfPath = r.resumePdfPath;
+    if (inSetup) { setupMsg('Reading your resume, takes a minute or two.'); await refresh(); loadSetup(); }
+    else reloadTextsAfterResumeTasks();
+  } catch (err) {
+    if (inSetup) setupMsg(err.message, true); else alert(err.message);
+  }
+});
 
 // Resume update / profile draft run as "resume" tasks: show the new texts once they finish.
 function reloadTextsAfterResumeTasks() {

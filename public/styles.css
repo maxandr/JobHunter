@@ -223,6 +223,7 @@ input[type="checkbox"] { min-height: 0; accent-color: var(--accent); width: 14px
 .texts section { display: flex; flex-direction: column; min-height: 0; }
 .texts h2 { margin: 0 0 4px; font-size: 15px; font-weight: 650; letter-spacing: -.01em; display: flex; align-items: center; justify-content: space-between; }
 .texts h2 button { float: none !important; }
+.h2Btns { display: flex; gap: 6px; }
 .texts p { margin: 0 0 12px; font-size: 12.5px; line-height: 1.5; }
 .texts textarea { flex: 1; min-height: 300px; resize: none; font-family: "Cascadia Mono", Consolas, monospace; font-size: 12.5px; line-height: 1.55; padding: 10px 12px; }
 .saveRow { display: flex; justify-content: flex-end; gap: 12px; align-items: center; padding: 0 28px 16px; }
@@ -282,6 +283,8 @@ input[type="checkbox"] { min-height: 0; accent-color: var(--accent); width: 14px
 .okBadge { color: var(--good); }
 .testRow { display: flex; gap: 10px; align-items: center; margin-top: 4px; }
 .okText { color: var(--good); } .errText { color: var(--bad); }
+.pickRow { display: flex; gap: 6px; }
+.pickRow input { flex: 1; min-width: 0; }
 /* Setup tab: numbered steps, a check mark on the done ones; a dot on the tab while something is missing */
 #viewSetup { overflow-y: auto; }
 .setupWrap { max-width: 720px; }

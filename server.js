@@ -142,10 +142,10 @@ function send(res, code, body, type = 'application/json; charset=utf-8') {
   res.writeHead(code, { 'Content-Type': type, 'Cache-Control': 'no-store' });
   res.end(typeof body === 'string' || Buffer.isBuffer(body) ? body : JSON.stringify(body));
 }
-function readBody(req) {
+function readBody(req, max = 5e6) {
   return new Promise((resolve, reject) => {
     let data = '';
-    req.on('data', c => { data += c; if (data.length > 5e6) req.destroy(); });
+    req.on('data', c => { data += c; if (data.length > max) req.destroy(); });
     req.on('end', () => {
       if (!data) return resolve({});
       try { resolve(JSON.parse(data)); } catch (e) { reject(new Error('Bad JSON')); }
@@ -217,6 +217,17 @@ async function handle(req, res) {
   if (p === '/api/resume/sync' && m === 'POST') {
     const t = enqueue('resume', 'Updating resume from the PDF', log => syncResume({ force: true, onLog: log }));
     return send(res, 202, publicTask(t));
+  }
+  // A PDF picked on the page: kept as data/resume.pdf and set as the local PDF in Settings.
+  if (p === '/api/resume/upload' && m === 'POST') {
+    const b = await readBody(req, 30e6);
+    const pdf = Buffer.from(String(b.data || ''), 'base64');
+    if (pdf.slice(0, 5).toString() !== '%PDF-') return send(res, 400, { error: 'This is not a PDF file' });
+    fs.writeFileSync(path.join(store.DATA, 'resume.pdf'), pdf);
+    store.saveConfig({ resumePdfPath: 'data/resume.pdf' });
+    const t = enqueue('resume', 'Reading the resume PDF' + (b.name ? ' ' + String(b.name).slice(0, 80) : ''),
+      log => syncResume({ force: true, onLog: log }));
+    return send(res, 202, { ...publicTask(t), resumePdfPath: 'data/resume.pdf' });
   }
   if (p === '/api/profile/skill' && m === 'POST') {
     const b = await readBody(req);

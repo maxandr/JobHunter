@@ -70,7 +70,7 @@
 <main id="viewResume" class="view hidden">
   <div class="texts">
     <section>
-      <h2>Base resume <button id="syncResume" style="float:right;font-size:12px" title="Download the resume again (Google Drive link or local PDF from Settings) and convert it">↻ Update</button></h2>
+      <h2>Base resume <span class="h2Btns"><button class="pickResume" style="font-size:12px" title="Pick your resume PDF on this computer and read it">Choose PDF…</button><button id="syncResume" style="font-size:12px" title="Download the resume again (Google Drive link or local PDF from Settings) and convert it">↻ Update</button></span></h2>
       <p class="muted">Updated automatically at every start from the Google Drive link or local PDF set in Settings (only if the PDF changed). Edits here are overwritten by the next PDF change — edit the source document instead.</p>
       <textarea id="resumeText" spellcheck="false"></textarea>
     </section>
@@ -193,7 +193,7 @@
       <h2>Resume <button id="syncResumeSet" style="float:right;font-size:12px" title="Save settings, then download the resume again from the link or PDF below and convert it">↻ Update</button></h2>
       <div class="setGrid wide">
         <label class="field">Google Doc / Drive link<input data-key="resumeDrive" placeholder="https://docs.google.com/document/d/…"></label>
-        <label class="field">Or a local PDF (overrides the link)<input data-key="resumePdfPath" placeholder="C:\Users\you\resume.pdf"></label>
+        <label class="field">Or a local PDF (overrides the link)<span class="pickRow"><input data-key="resumePdfPath" placeholder="C:\Users\you\resume.pdf"><button class="pickResume" type="button">Choose…</button></span></label>
       </div>
       <label class="check"><input type="checkbox" data-key="resumeSyncOnStart"> Check the resume for changes at every server start</label>
       <label class="check"><input type="checkbox" data-key="cvTwoPages"> Always fit tailored CVs on 2 pages (Generate checks the PDF and shortens the CV until it fits, +1–2 min)</label>
@@ -299,6 +299,7 @@
   </section>
 </template>
 
+<input type="file" id="resumeFile" accept="application/pdf,.pdf" class="hidden">
 <script src="cv-render.js"></script>
 <script src="diff.js"></script>
 <script src="ats-pdf.js"></script>
