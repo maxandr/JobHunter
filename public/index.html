@@ -170,7 +170,6 @@
       <h2>Search</h2>
       <div class="setGrid">
         <label class="field">Jobs per search<input type="number" min="1" max="60" data-key="maxJobsPerSearch"></label>
-        <label class="field">Claude runs at once<input type="number" min="1" max="6" data-key="maxParallel"></label>
       </div>
       <label class="check"><input type="checkbox" data-key="perplexity"> Use Perplexity from your claude.ai account (search, salary estimates, people)</label>
       <div id="perplexityNote" class="muted small"></div>
@@ -215,7 +214,10 @@
         <label class="field">Path to claude (empty = from PATH)<input data-key="claudeBin" placeholder="claude"></label>
         <label class="field">MCP config file (e.g. Perplexity with your own API key)<input data-key="mcpConfig" placeholder="mcp-perplexity.json"></label>
         <label class="field">Extra allowed tools, comma-separated<input data-key="extraAllowedTools" placeholder="mcp__perplexity"></label>
+        <label class="field">Claude runs at once<input type="number" min="1" max="6" data-key="maxParallel"></label>
       </div>
+      <p class="muted small">Runs at once: how many Claude tasks go at the same time, the rest wait in line. Search, form filling
+        and resume sync still run one at a time. More at once uses your limits faster.</p>
       <div class="testRow"><button id="testClaude">Test Claude</button><button id="openSetup" class="ghost">Setup…</button><span id="testClaudeMsg" class="muted"></span></div>
     </section>
 
