@@ -18,6 +18,8 @@ const { isLinkedInSearch, searchName } = require('./lib/linkedin');
 store.ensure();
 // Read once at start for the port; everything else reads store.config() fresh, so the Settings tab applies at once.
 const config = store.config();
+// The port actually listened on: config.port, or a later one when another app folder already holds it.
+let port = config.port;
 // Version in the extension folder; the page compares it with the one the browser has loaded.
 let EXTENSION_VERSION = '';
 try {
@@ -164,7 +166,7 @@ async function handle(req, res) {
   // Other sites open in the browser can reach localhost too. Host blocks DNS rebinding (a foreign domain pointed
   // at 127.0.0.1 reading your data); Origin + JSON content type block forms and fetches from other pages
   // (a JSON body can't be sent cross-site without a CORS preflight, which this server never allows).
-  const hosts = [`localhost:${config.port}`, `127.0.0.1:${config.port}`];
+  const hosts = [`localhost:${port}`, `127.0.0.1:${port}`];
   if (!hosts.includes(String(req.headers.host).toLowerCase())) return send(res, 403, { error: 'Forbidden host' });
   if (m !== 'GET' && m !== 'HEAD') {
     const origin = req.headers.origin;
@@ -178,6 +180,9 @@ async function handle(req, res) {
     if (!body) return send(res, 404, 'Not found', 'text/plain');
     return send(res, 200, body, MIME[path.extname(name)] || 'application/octet-stream');
   }
+
+  // Lets a second job-hunter.exe tell whether the server on this port belongs to its own folder.
+  if (p === '/api/root' && m === 'GET') return send(res, 200, { root: store.ROOT });
 
   if (p === '/api/state' && m === 'GET') {
     const jobs = store.jobs();
@@ -262,7 +267,7 @@ async function handle(req, res) {
     let pdfBrowser = '';
     try { pdfBrowser = findBrowser(); } catch (_) { /* none found */ }
     return send(res, 200, { config: store.config(), actions: store.ACTIONS, browsers: apply.detectBrowsers(), pdfBrowser,
-      runningPort: config.port, supervised: !!process.env.JOB_HUNTER_SUPERVISED, nextAutoSearchAt: nextAutoSearchAt(),
+      runningPort: port, supervised: !!process.env.JOB_HUNTER_SUPERVISED, nextAutoSearchAt: nextAutoSearchAt(),
       perplexity: perplexityStatus() });
   }
   if (p === '/api/settings' && m === 'PUT') {
@@ -428,7 +433,7 @@ const server = http.createServer((req, res) => {
 
 function openBrowser() {
   const { exec } = require('node:child_process');
-  const u = `http://localhost:${config.port}`;
+  const u = `http://localhost:${port}`;
   exec(process.platform === 'win32' ? `start "" "${u}"` : process.platform === 'darwin' ? `open ${u}` : `xdg-open ${u}`);
 }
 
@@ -436,18 +441,26 @@ let listenTries = 0;
 server.on('error', e => {
   if (e.code !== 'EADDRINUSE') throw e;
   // A restarted job-hunter.exe may start before the old one has let the port go: wait a little.
-  if (process.env.JOB_HUNTER_RESTARTED && ++listenTries < 20) return setTimeout(listen, 500);
-  // Started a second time: the app is already running, just show it.
-  console.log(`Job Hunter is already running on port ${config.port}, opening it in the browser.`);
-  if (process.argv.includes('--open')) openBrowser();
-  setTimeout(() => process.exit(0), 1500);
+  if (process.env.JOB_HUNTER_RESTARTED && port === config.port && ++listenTries < 20) return setTimeout(listen, 500);
+  fetch(`http://127.0.0.1:${port}/api/root`).then(r => r.ok ? r.json() : {}).catch(() => ({})).then(({ root }) => {
+    if (root && path.resolve(root).toLowerCase() === path.resolve(store.ROOT).toLowerCase()) {
+      // Started a second time from the same folder: the app is already running, just show it.
+      console.log(`Job Hunter is already running on port ${port}, opening it in the browser.`);
+      if (process.argv.includes('--open')) openBrowser();
+      return setTimeout(() => process.exit(0), 1500);
+    }
+    // The port belongs to a copy in another folder (its own data) or to another program: take the next one.
+    if (port - config.port >= 20) throw new Error(`Ports ${config.port}-${port} are all busy`);
+    port++;
+    listen();
+  });
 });
 
 // Listen only on this computer — the app uses your Claude subscription, it must not be reachable from outside.
-const listen = () => server.listen(config.port, '127.0.0.1');
+const listen = () => server.listen(port, '127.0.0.1');
 listen();
 server.on('listening', () => {
-  console.log(`Job Hunter is running: http://localhost:${config.port}  (type "restart" or "exit" here)`);
+  console.log(`Job Hunter is running: http://localhost:${port}  (type "restart" or "exit" here)`);
   // Pull the latest resume PDF on every start (Claude runs only if the PDF changed).
   if (config.resumeSyncOnStart && (config.resumeDrive || config.resumePdfPath)) {
     enqueue('resume', 'Checking the resume PDF for changes', log => syncResume({ onLog: log }));

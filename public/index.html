@@ -203,7 +203,6 @@
       <div class="setGrid wide">
         <label class="field">Form-filling browser .exe (empty = the one the app is open in)<input data-key="applyBrowserBin" placeholder="auto"></label>
         <label class="field">PDF browser .exe (empty = Edge / Chrome)<input data-key="browserBin" placeholder="auto"></label>
-        <label class="field">Form-filling browser debug port<input type="number" min="1024" max="65535" data-key="applyBrowserPort"></label>
       </div>
       <div id="browserList" class="browserList"></div>
     </section>
@@ -219,13 +218,6 @@
       <p class="muted small">Runs at once: how many Claude tasks go at the same time, the rest wait in line. Search, form filling
         and resume sync still run one at a time. More at once uses your limits faster.</p>
       <div class="testRow"><button id="testClaude">Test Claude</button><button id="openSetup" class="ghost">Setup…</button><span id="testClaudeMsg" class="muted"></span></div>
-    </section>
-
-    <section class="setBox">
-      <h2>Server</h2>
-      <div class="setGrid">
-        <label class="field">Port (needs restart)<input type="number" min="1024" max="65535" data-key="port"></label>
-      </div>
     </section>
 
     <section class="setBox">
