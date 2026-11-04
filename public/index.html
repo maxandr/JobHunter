@@ -98,10 +98,10 @@
       Leave the list empty to use only the built-in search.</p>
     <p class="muted">Companies: paste the company's job board link (<code>job-boards.greenhouse.io/discord</code>, <code>jobs.lever.co/…</code>,
       <code>jobs.ashbyhq.com/…</code>, <code>apply.workable.com/…</code>) or its careers page if the board is embedded there.
-      The app downloads all their open postings itself, for free, and keeps those whose titles have your “Look for” words
-      (and none of the “Hide” words) — Claude only scores what is left. With “Search only these sources”, if nothing is new, Claude is not run at all.</p>
+      The app downloads all their open postings itself, for free, and keeps those with your “Look for” words in the title
+      (or two of them in the text) and none of the “Hide” words — Claude only scores what is left, the closest to your resume first. With “Search only these sources”, if nothing is new, Claude is not run at all.</p>
     <p class="muted">LinkedIn is searched on its own every time (Settings → Search): your “Look for” words in your country and worldwide (remote),
-      through LinkedIn's public guest pages — no login, free; postings need one of the words in the title and none of the “Hide” words.
+      through LinkedIn's public guest pages — no login, free; postings need one of the words in the title (or two in the text) and none of the “Hide” words.
       For a narrower search (other keywords, a city, a company), search on linkedin.com and paste the link from the address bar
       (<code>linkedin.com/jobs/search/?keywords=…</code>). LinkedIn may limit requests for a while if searches run too often.</p>
     <p class="muted">Telegram: public channels only (<code>@channel</code> or <code>t.me/channel</code>) — Claude reads the latest posts from the channel's web preview.</p>
@@ -114,7 +114,8 @@
     <div id="sourceList" class="sourceList"></div>
     <div class="filterBox">
       <h2>Filter</h2>
-      <p class="muted">Whole words, comma-separated (“engine” does not match “engineer”).
+      <p class="muted">Comma-separated. “Look for” matches the start of a word (“programmer” also finds “programmers”; words of 3 letters or less, like “ue5”, only whole words);
+        “Hide” matches whole words only (“intern” does not hide “Internal Tools”).
         Words to look for pick postings from the sites' link lists; words to hide also remove matching job titles from every search.</p>
       <label class="field">Look for<input id="filterInclude" autocomplete="off" placeholder="example: unreal, gameplay, c++"></label>
       <label class="field">Hide<input id="filterExclude" autocomplete="off" placeholder="example: rendering, technical artist, qa"></label>

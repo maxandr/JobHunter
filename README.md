@@ -8,12 +8,15 @@ What it does:
 - **Companies** — on the "Extra sources" tab, paste a company's job board link on Greenhouse, Lever, Ashby or Workable
   (e.g. `job-boards.greenhouse.io/discord`), or its careers page if one of these boards is embedded there.
   The app downloads all of the company's open postings through the platform's public API (free, no Claude tokens),
-  keeps new ones whose titles have your "Look for" words and none of the "Hide" words, and only those go to Claude for scoring
-  (up to 30 per company). With "Search only these sources", if nothing is new, Claude is not run at all.
+  keeps new ones with none of the "Hide" words in the title and a "Look for" word in the title (or, failing that, two of them
+  in the posting text, if it is as close to your resume as a typical title match), and only those go to Claude for scoring
+  (up to 30 per company, the closest to your resume first). With "Search only these sources", if nothing is new, Claude is not run at all.
 - **LinkedIn** — every search also reads LinkedIn by itself: your "Look for" words (Extra sources tab) in your country
   ("Resume & profile" tab → "Where you live") and worldwide (postings that mention "remote"). The app reads the newest results and the postings themselves through
-  LinkedIn's public guest pages (no login, no Claude tokens), keeps titles with a "Look for" word and no "Hide" word,
-  drops ones already in your list or older than the search period, and sends up to 12 per search to Claude for scoring.
+  LinkedIn's public guest pages (no login, no Claude tokens), keeps titles with a "Look for" word and no "Hide" word
+  (with free places left, it opens up to 6 more and keeps those whose text has two of the words),
+  drops ones already in your list or older than the search period, and sends up to 12 per search to Claude for scoring,
+  the closest to your resume first.
   Turn it off in Settings → Search. For a narrower search, paste a linkedin.com job search link
   (`linkedin.com/jobs/search/?keywords=...&location=...`) on the Extra sources tab (up to 25 postings from it).
   These pages are unofficial and ignore LinkedIn's "Remote" filter (Claude checks who can apply from the posting text);
@@ -24,6 +27,9 @@ What it does:
   For sites, the app itself collects job links from the page and from the sitemap (on sites like Hitmarker the list
   is rendered by JavaScript, so Claude would see an empty page) and filters them by the words in the **Filter** block on the same tab:
   "Look for" — what to look for in a link, "Hide" — what to hide (such jobs are also removed from the results of any search).
+  "Look for" words match the start of a word ("programmer" also finds "programmers", "engineer" — "engineering"; words of
+  3 letters or less, like "ue5", only whole words); "Hide" words match whole words only ("intern" does not hide "Internal Tools").
+  Postings closest to your resume (by its words, rare ones counting more) go to Claude first when a source has more than its limit.
   The filter is stored in `data\source-filter.json`.
 - **Salary** — every job has a salary block. If the posting lists a range, that range is shown (green badge in the list).
   If there are no numbers, Claude looks up salary data (Glassdoor, Levels.fyi, Djinni, etc.) and shows an approximate range marked
