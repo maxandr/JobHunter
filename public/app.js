@@ -259,6 +259,14 @@ function updateTailorButton() {
   }
   b.disabled = busy;
   b.textContent = busy ? 'Working…' : job && job.hasDocs ? 'Regenerate' : 'Generate';
+  const cu = $('#detail .cvUsed');
+  if (cu && job) {
+    cu.classList.toggle('base', !job.hasDocs);
+    cu.innerHTML = job.hasDocs
+      ? '<b>Uploads:</b> the tailored CV and cover letter of this job (the block below).'
+      : '<b>No tailored CV for this job yet</b> — “Open &amp; fill form” uploads your <b>base resume</b> PDF '
+        + '(Resume &amp; profile tab) and no cover letter. Press Generate below for a tailored one; “Try to auto apply” makes it itself.';
+  }
   const lb = $('#detail .dLetterRegen');
   if (lb) {
     const writing = S.tasks.some(t => t.jobId === S.sel && t.kind === 'letter' && (t.status === 'running' || t.status === 'queued'));
@@ -488,7 +496,7 @@ async function renderDetail() {
         <div class="bdBar"><span class="${fitClass(pct)}" style="width:${pct}%"></span></div>
         <div class="bdNote muted">${esc(b.note)}</div></div>`;
     }).join('');
-    ev.after(collSection('fit', 'Fit breakdown', bd));
+    $('[data-coll="apply"]', pane).after(collSection('fit', 'Fit breakdown', bd));
   }
   if (job.requirements && job.requirements.length) {
     const reqs = job.requirements;
@@ -508,7 +516,7 @@ async function renderDetail() {
       ${have.length ? `<div class="reqHead">Covered by your resume</div>` : ''}
       ${have.map(r => `<div class="req have"><span class="reqIcon">✓</span>
           <div><div>${esc(r.text)}</div>${r.evidence ? `<div class="muted reqEv">${esc(r.evidence)}</div>` : ''}</div></div>`).join('')}`;
-    (pane.querySelector('[data-coll="fit"]') || ev).after(collSection('reqs', 'Requirements vs your resume', rq,
+    (pane.querySelector('[data-coll="fit"]') || $('[data-coll="apply"]', pane)).after(collSection('reqs', 'Requirements vs your resume', rq,
       `<span class="reqCount bad">${miss.filter(r => r.importance === 'required').length} required missing</span>
        <span class="reqCount warn">${miss.filter(r => r.importance === 'nice').length} nice-to-have missing</span>
        <span class="reqCount ok">${have.length} covered</span>`));
@@ -568,6 +576,7 @@ function collapseHint(key, job) {
   if (key === 'salary') return statedSalary(job) ? job.salary : job.salaryEstimate ? '≈ ' + job.salaryEstimate.range : '';
   if (key === 'fit') return job.fitScore != null ? job.fitScore + ' / 100' : '';
   if (key === 'notes') return (job.notes || '').replace(/\s+/g, ' ').slice(0, 80);
+  if (key === 'about') return (job.summary || '').replace(/\s+/g, ' ').slice(0, 100);
   if (key === 'apply') return job.applyUrl ? hostOf(job.applyUrl) : '';
   if (key === 'people' && job.people) {
     const p = job.people;
