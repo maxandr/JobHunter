@@ -51,7 +51,8 @@ What it does:
   looks for numbers and skills that are not in your base resume and profile, and for job keywords you have but that didn't make it into the CV.
   If anything is found, Claude does a short second pass to fix it (about +1 minute). The same pass rewrites
   weak bullets ("Worked on…", first person, too long). If a number disappears or something made up appears after the second pass,
-  the first version is kept. The letter opens with "Hello <Company>," and keeps a plain, matter-of-fact tone (no flattery or eagerness).
+  the first version is kept. The letter is at most 1200 characters by default (Settings → "Cover letter, max characters"): it opens with "Hello <Company>," and keeps a plain, matter-of-fact tone (no flattery or eagerness).
+  On the Cover letter tab, **Regenerate letter** rewrites only the letter, with optional extra instructions (e.g. "don't mention where I live") and its own length limit.
 - **ATS score** — a tab next to the resume: how well the CV matches the job for an applicant tracking system (ATS), 0–100, "base → tailored".
   It is computed by code, without Claude: job keywords (40%), skills (20%), exact job title under your name (15%), sections and contacts (15%),
   consistent date format (10%). It also lists missing keywords, tips, and, in red, things that are not in your resume (check they aren't made up).
@@ -117,7 +118,8 @@ The web page and the extension are built into the exe, so after changing them, r
 | `searchTimeoutMinutes` | Search timeout. |
 | `timeouts` | Timeout in minutes for the other actions: `analyze`, `tailor`, `people`, `apply`, `resume`. |
 | `resumeSyncOnStart` | Check the resume on Google Drive on every start (`true`/`false`). |
-| `cvTwoPages` | Always fit the tailored CV on 2 pages (`true`/`false`, default `false`). Generate builds the PDF, counts the pages and, if there are more, asks Claude to shorten the CV (+1–2 minutes). |
+| `letterMaxChars` | Longest cover letter in characters, greeting and sign-off included (150–5000, default `1200`). Under 500 the letter is a 1–2 sentence note; longer limits give a few paragraphs. The Cover letter tab can set another limit for one Regenerate. |
+| `cvTwoPages` | Always fit the tailored CV on 2 pages (`true`/`false`, default `false`). Generate builds the PDF, counts the pages and, if there are more, asks Claude to shorten the CV; if your base resume is longer than 2 pages and the CV leaves much of page 2 empty, asks Claude to bring content back so both pages are full (+1–2 minutes). |
 | `autoSearch` | Automatic search while the server is running: `enabled`, `everyHours`, `maxAgeDays`, `sourcesOnly`. |
 | `languages` | Text language: `cv` (resume), `letter` (cover letter), `messages` (LinkedIn notes), `forms` (form answers). `"auto"` means the job's language, otherwise a language name, e.g. `"English"`. By default the resume and forms are in English, and the letter and notes are in the job's language. For a single CV you can pick the language under "Options" above the Generate button. |
 | `applyBrowserBin`, `browserBin`, `applyBrowserPort` | Browser for filling forms, browser for PDFs, debug port of the form browser. |

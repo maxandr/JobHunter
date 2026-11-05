@@ -329,7 +329,7 @@ async function handle(req, res) {
     return send(res, 202, publicTask(t));
   }
 
-  const jm = p.match(/^\/api\/jobs\/([a-z0-9-]+)(\/docs|\/tailor|\/refresh|\/apply|\/answers|\/file|\/people)?$/i);
+  const jm = p.match(/^\/api\/jobs\/([a-z0-9-]+)(\/docs|\/tailor|\/letter|\/refresh|\/apply|\/answers|\/file|\/people)?$/i);
   if (jm) {
     const [, id, sub] = jm;
     if (!sub && m === 'PATCH') {
@@ -339,7 +339,7 @@ async function handle(req, res) {
     if (!sub && m === 'DELETE') {
       return store.deleteJob(id) ? send(res, 200, { ok: true }) : send(res, 404, { error: 'Not found' });
     }
-    if (sub === '/docs' && m === 'GET') return send(res, 200, store.docs(id));
+    if (sub === '/docs' && m === 'GET') return send(res, 200, { ...store.docs(id), letterMaxChars: store.config().letterMaxChars });
     if (sub === '/docs' && m === 'PUT') {
       const b = await readBody(req);
       const d = store.docs(id);
@@ -420,6 +420,19 @@ async function handle(req, res) {
       try { if (b.lang) lang = store.cleanLang(b.lang, 'Language'); } catch (e) { return send(res, 400, { error: e.message }); }
       const t = enqueue('tailor', `CV + cover letter${lang ? ' (' + lang + ')' : ''}: ${job.company} — ${job.title}`,
         log => actions.tailor(id, { onLog: log, extra: String(b.extra || ''), lang }), id);
+      return send(res, 202, publicTask(t));
+    }
+    if (sub === '/letter' && m === 'POST') {
+      const b = await readBody(req);
+      const job = store.jobs().find(j => j.id === id);
+      if (!job) return send(res, 404, { error: 'Not found' });
+      if (tasks.some(t => t.jobId === id && t.kind !== 'people' && (t.status === 'queued' || t.status === 'running'))) {
+        return send(res, 409, { error: 'Already working on this job' });
+      }
+      let lang = '';
+      try { if (b.lang) lang = store.cleanLang(b.lang, 'Language'); } catch (e) { return send(res, 400, { error: e.message }); }
+      const t = enqueue('letter', `Cover letter${lang ? ' (' + lang + ')' : ''}: ${job.company} — ${job.title}`,
+        log => actions.rewriteLetter(id, { onLog: log, extra: String(b.extra || '').slice(0, 2000), lang, maxChars: +b.maxChars || 0 }), id);
       return send(res, 202, publicTask(t));
     }
   }

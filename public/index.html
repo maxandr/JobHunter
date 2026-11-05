@@ -196,7 +196,10 @@
         <label class="field">Or a local PDF (overrides the link)<span class="pickRow"><input data-key="resumePdfPath" placeholder="C:\Users\you\resume.pdf"><button class="pickResume" type="button">Choose…</button></span></label>
       </div>
       <label class="check"><input type="checkbox" data-key="resumeSyncOnStart"> Check the resume for changes at every server start</label>
-      <label class="check"><input type="checkbox" data-key="cvTwoPages"> Always fit tailored CVs on 2 pages (Generate checks the PDF and shortens the CV until it fits, +1–2 min)</label>
+      <label class="check"><input type="checkbox" data-key="cvTwoPages"> Always fit tailored CVs on 2 pages (Generate checks the PDF and shortens the CV until it fits; from a longer base resume it fills both pages, +1–2 min)</label>
+      <div class="setGrid">
+        <label class="field">Cover letter, max characters<input type="number" min="150" max="5000" step="50" data-key="letterMaxChars"></label>
+      </div>
     </section>
 
     <section class="setBox">

@@ -259,6 +259,12 @@ function updateTailorButton() {
   }
   b.disabled = busy;
   b.textContent = busy ? 'Working…' : job && job.hasDocs ? 'Regenerate' : 'Generate';
+  const lb = $('#detail .dLetterRegen');
+  if (lb) {
+    const writing = S.tasks.some(t => t.jobId === S.sel && t.kind === 'letter' && (t.status === 'running' || t.status === 'queued'));
+    lb.disabled = busy;
+    lb.innerHTML = writing ? '<span class="spinner"></span>Writing…' : 'Regenerate letter';
+  }
   const r = $('#detail .dRefresh');
   if (r) {
     const refreshing = S.tasks.some(t => t.jobId === S.sel && t.kind === 'refresh' && (t.status === 'running' || t.status === 'queued'));
@@ -669,7 +675,15 @@ async function renderDocs(job) {
   } else if (S.editing) {
     content = `<textarea class="docEdit">${esc(text)}</textarea>`;
   } else {
-    content = tab === 'cv' ? `<div class="cvPaper">${renderCv(text)}</div>` : `<div class="letter">${esc(text)}</div>`;
+    content = tab === 'cv' ? `<div class="cvPaper">${renderCv(text)}</div>` : `
+      <div class="letterRegen">
+        <textarea class="dLetterExtra" rows="2" placeholder="Extra instructions for this letter, e.g. don't mention where I live">${esc(S.letterExtra || '')}</textarea>
+        <label class="letterMax" title="Longest letter in characters (default from Settings)">Max chars
+          <input class="dLetterMax" type="number" min="150" max="5000" step="50" value="${S.letterMax || d.letterMaxChars || 1200}"></label>
+        <button class="dLetterRegen" title="Writes a new cover letter only; the CV stays as it is">Regenerate letter</button>
+      </div>
+      <div class="letter">${esc(text)}</div>
+      <p class="muted letterCount">${text.length} characters</p>`;
   }
   body.innerHTML = `
     <div class="docTabs">
@@ -684,6 +698,12 @@ async function renderDocs(job) {
         ${tab === 'cv' ? '<button data-act="pdf">.pdf</button><button data-act="atscheck" title="Makes the PDF and shows what an ATS (applicant tracking system) reads from it">ATS check</button><button data-act="download">.md</button><button data-act="print">Print</button>'
           : '<button data-act="download">.txt</button>'}` : ''}
     </div>${content}`;
+  // Instructions typed for the letter survive re-renders (task finished, tab switched) during this session.
+  const le = body.querySelector('.dLetterExtra');
+  if (le) le.addEventListener('input', () => { S.letterExtra = le.value; });
+  const lm = body.querySelector('.dLetterMax');
+  if (lm) lm.addEventListener('input', () => { S.letterMax = +lm.value || 0; });
+  updateTailorButton();
 }
 
 const atsTone = n => n >= 75 ? 'good' : n >= 50 ? 'mid' : 'low';
@@ -890,6 +910,14 @@ document.addEventListener('click', async e => {
     try {
       await api(`/api/jobs/${job.id}/tailor`, { method: 'POST', body: { extra: $('#detail .dExtra').value, lang: $('#detail .dLang').value } });
       S.docTab = 'cv'; S.editing = false; refresh();
+    } catch (err) { alert(err.message); }
+  } else if (t.classList.contains('dLetterRegen')) {
+    S.letterExtra = $('#detail .dLetterExtra').value;
+    S.letterMax = +$('#detail .dLetterMax').value || 0;
+    if (S.letterMax && (S.letterMax < 150 || S.letterMax > 5000)) return alert('Max characters: from 150 to 5000.');
+    try {
+      await api(`/api/jobs/${job.id}/letter`, { method: 'POST', body: { extra: S.letterExtra, lang: $('#detail .dLang').value, maxChars: S.letterMax } });
+      refresh();
     } catch (err) { alert(err.message); }
   } else if (t.classList.contains('dApply')) {
     t.disabled = true;
