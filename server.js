@@ -28,7 +28,7 @@ try {
 
 // ---------- task queue: up to config.maxParallel claude processes at once ----------
 // Short tasks go first, so a pasted link doesn't wait behind a 20-minute search.
-const PRIORITY = { apply: 0, analyze: 1, refresh: 1, tailor: 1, people: 1, resume: 2, search: 3 };
+const PRIORITY = { apply: 0, answer: 0, analyze: 1, refresh: 1, tailor: 1, people: 1, resume: 2, search: 3 };
 // These never run twice at once: two searches would find the same jobs, two form fills would fight over one browser.
 const ONE_AT_A_TIME = new Set(['search', 'apply', 'resume', 'setup']);
 const tasks = [];
@@ -237,6 +237,14 @@ async function handle(req, res) {
   if (p === '/api/profile/skill' && m === 'POST') {
     const b = await readBody(req);
     return store.addProfileSkill(b.text) ? send(res, 200, { ok: true }) : send(res, 400, { error: 'Empty' });
+  }
+  if (p === '/api/profile/answer' && m === 'POST') {
+    const b = await readBody(req);
+    if (!String(b.answer || '').trim()) return send(res, 400, { error: 'Empty' });
+    // A task, so it shows in the queue ("Working") like every other Claude call.
+    const t = enqueue('answer', 'Adding an answer to the profile', () => actions.answerQuestion(b.question, b.answer),
+      b.jobId ? String(b.jobId) : null);
+    return send(res, 202, publicTask(t));
   }
   if (p === '/api/texts' && m === 'PUT') {
     const b = await readBody(req);

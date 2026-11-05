@@ -429,6 +429,11 @@ table.usage { width: 100%; border-collapse: collapse; font-size: 13px; }
 .reqEv { font-size: 12px; margin-top: 2px; }
 .reqAdd { font-size: 12px; min-height: 22px; padding: 0 8px; }
 .reqDone { font-size: 12px; white-space: nowrap; }
+.qItem { margin: 6px 0 12px; }
+.qItem .reqDone { white-space: normal; }
+.qText { margin-bottom: 4px; }
+.qRow { display: flex; gap: 8px; align-items: flex-start; }
+.qAnswer { flex: 1; min-width: 0; font: inherit; font-size: 13px; resize: vertical; }
 
 .peopleBox { margin-top: 18px; }
 .peopleBody { padding: 0; }

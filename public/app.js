@@ -99,6 +99,7 @@ function renderTasks() {
       info = `<span class="muted">${parts.join(', ') || esc(t.result.reason || 'no changes')}</span>`;
     }
     if (t.status === 'done' && t.kind === 'people') info = `<span class="muted">hiring ${t.result.hiring}, referrers ${t.result.referrers}, referral program: ${esc(t.result.referral)}</span>`;
+    if (t.status === 'done' && t.kind === 'answer') info = `<span class="muted">${esc(t.result)}</span>`;
     if (t.status === 'done' && t.kind === 'refresh') info = `<span class="muted">fit now ${t.result.job.fitScore ?? '–'}</span>`;
     if (t.status === 'done' && t.kind === 'search') info = `<span class="muted">found ${t.result.found}, new ${t.result.added}${t.result.tooOld ? ', skipped ' + t.result.tooOld + ' too old' : ''}${t.result.notes ? ' — ' + esc(t.result.notes) : ''}</span>`;
     if (t.status === 'done' && t.kind === 'apply') {
@@ -679,7 +680,15 @@ async function renderDocs(job) {
       <p><strong>What changed:</strong> ${esc(meta.changes || '—')}</p>
       <p><strong>ATS keywords covered:</strong><br>${(meta.keywords || []).map(k => `<span class="badge kw">${esc(k)}</span>`).join('') || '—'}</p>
       <p><strong>Requirements not clearly met:</strong><br>${(meta.missing || []).map(k => `<span class="badge kw">${esc(k)}</span>`).join('') || '—'}</p>
-      <p><strong>Questions for you (answers go into the profile):</strong><br>${(meta.questions || []).map(k => `<span class="badge kw">${esc(k)}</span>`).join('') || '—'}</p>
+      <p><strong>Questions for you (answers go into the profile):</strong>${(meta.questions || []).length ? '' : ' —'}</p>
+      ${(meta.questions || []).map((q, i) => {
+        const done = (S.answered || {})[q];
+        return `<div class="qItem"><div class="qText">${esc(q)}</div>${done
+          ? `<div class="muted reqDone">added to profile ✓ ${esc(done)}</div>`
+          : (S.answering || {})[q] ? '<div class="muted reqDone"><span class="spinner"></span>Saving…</div>'
+          : `<div class="qRow"><textarea class="qAnswer" data-qi="${i}" rows="2" placeholder="Your answer, in any language (it is saved in English). Leave empty if it doesn't apply.">${esc((S.answerDraft || {})[q] || '')}</textarea>
+             <button class="qSave" data-qi="${i}">Add to profile</button></div>`}</div>`;
+      }).join('')}
       <p class="muted">Generated ${esc((meta.generatedAt || '').replace('T', ' ').slice(0, 16))}</p></div>`;
   } else if (S.editing) {
     content = `<textarea class="docEdit">${esc(text)}</textarea>`;
@@ -910,7 +919,7 @@ document.addEventListener('click', async e => {
     S.sel = t.dataset.id; S.editing = false; S.docTab = 'cv';
     renderList(); renderDetail();
   } else if (t.dataset.f) {
-    S.filter = t.dataset.f; renderList();
+    S.filter = t.dataset.f; S.preFindFilter = null; renderList();
   } else if (t.id === 'searchBtn') {
     if (!S.hasResume) return alert('Fill in your resume first (Resume & profile tab).');
     await api('/api/search', { method: 'POST', body: { maxAgeDays: +S.searchAge } }); refresh();
@@ -959,6 +968,29 @@ document.addEventListener('click', async e => {
     await api('/api/profile/skill', { method: 'POST', body: { text: t.dataset.skill } });
     (S.addedSkills = S.addedSkills || []).push(t.dataset.skill);
     t.outerHTML = '<span class="muted reqDone">added to profile ✓</span>';
+  } else if (t.classList.contains('qSave')) {
+    const q = ((S.docs && S.docs.meta && S.docs.meta.questions) || [])[+t.dataset.qi];
+    const box = t.parentElement.querySelector('.qAnswer');
+    const answer = box.value.trim();
+    if (!q || !answer) return;
+    t.disabled = box.disabled = true;
+    t.textContent = 'Saving…';
+    (S.answering = S.answering || {})[q] = true;
+    (S.answerDraft = S.answerDraft || {})[q] = answer; // back in the box if saving fails
+    try {
+      const task = await api('/api/profile/answer', { method: 'POST', body: { question: q, answer, jobId: job.id } });
+      refresh(); // shows the task ("Working") at the top
+      const done = await waitTask(task.id);
+      if (!done || done.status !== 'done') throw new Error(done && done.error || 'the task was cancelled');
+      (S.answered = S.answered || {})[q] = done.result;
+      delete S.answering[q];
+      delete S.answerDraft[q];
+      if (S.docTab === 'info') renderDocs(job);
+    } catch (err) {
+      delete S.answering[q];
+      if (S.docTab === 'info') renderDocs(job);
+      alert('Could not save the answer: ' + err.message);
+    }
   } else if (t.dataset.dview) {
     S.diffView = t.dataset.dview; renderDocs(job);
   } else if (t.dataset.doc) {
@@ -1062,10 +1094,17 @@ document.addEventListener('change', async e => {
   }
 });
 
-$('#findInput').addEventListener('input', e => { S.find = e.target.value; renderList(); });
+// Typing in the search box looks through all jobs; clearing it brings back the filter used before.
+function setFind(text) {
+  if (text.trim() && !S.find.trim()) { S.preFindFilter = S.filter; S.filter = 'all'; }
+  else if (!text.trim() && S.find.trim() && S.preFindFilter) { S.filter = S.preFindFilter; S.preFindFilter = null; }
+  S.find = text;
+  renderList();
+}
+$('#findInput').addEventListener('input', e => setFind(e.target.value));
 
 document.addEventListener('keydown', e => {
-  if (e.key === 'Escape' && e.target.id === 'findInput') { e.target.value = S.find = ''; renderList(); }
+  if (e.key === 'Escape' && e.target.id === 'findInput') { e.target.value = ''; setFind(''); }
   if (e.key === 'Enter' && e.target.classList.contains('dSkipReason')) saveSkipReason($('#detail'));
 });
 
