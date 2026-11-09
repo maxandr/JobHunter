@@ -1,7 +1,37 @@
 # Job Hunter
 
-A local web app for job hunting. Under the hood it calls Claude Code (`claude -p`),
-so it runs on your Claude subscription, with no separate API billing.
+A local web app for job hunting. Choose Claude Code (`claude -p`) or OpenAI Codex
+(`codex exec`) in Settings → AI provider, then Save settings. All AI tasks use
+the selected agent, including search, scoring, CVs, letters, form answers and resume import.
+Existing configurations continue to use Claude.
+
+For Codex, install the CLI with `npm install -g @openai/codex`, run `codex login`
+in a terminal, and press **Test AI** in Settings. A custom CLI path can be set under
+AI tools. Each provider keeps its own models and effort settings. Codex defaults to
+the model in its CLI configuration. The model menu includes GPT-6.1 Sol, GPT-6 Astra,
+GPT-6.1 Terra and GPT-6 Luna, with GPT-6 Sol and GPT-5.6 versions grouped separately.
+Custom remains available for other model names. Availability depends on your account.
+Codex uses built-in web search; Claude's Perplexity connector and MCP settings are
+not passed to Codex. Codex runs in a read-only sandbox. PDF import uses its available
+local reading tools; if your environment cannot extract the PDF, paste the resume
+text in Resume & profile. Codex does not report a dollar cost here, so its API value
+is shown as zero (not a claim that the run is free).
+
+Agent integration lives in `lib/ai.js`: `runAgent({ prompt, schema, tools, config,
+cwd, action, timeoutMs, onLog })` returns `{ data, costUsd, durationMs }`.
+`tools` uses shared capabilities (`web`, `readFiles`), and `checkAgent(config)` returns
+installation/login status and capabilities. Adapters are registered in one place;
+task code does not choose a CLI. Both adapters honor task cancellation and timeouts.
+Run integration tests with `npm test`.
+Run `node test/settings-browser.js` for real-browser settings checks with mocked HTTP.
+Run `node test/agent-smoke.js` for optional live Codex checks (uses your account limits,
+public web search and a synthetic text file). Test AI checks installation and login
+without saving the draft; model access is verified when a task runs.
+
+Codex execution and structured output follow the
+[official non-interactive mode documentation](https://learn.chatgpt.com/docs/non-interactive-mode).
+After updating the source, restart via `start.bat`. If you use the standalone
+`job-hunter.exe`, rebuild it with `build.bat` to include source changes.
 
 What it does:
 - **Find new jobs** — Claude searches for open positions matching your profile, drops duplicates and closed listings, and gives each a 0–100 match score.

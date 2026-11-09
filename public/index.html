@@ -104,10 +104,10 @@
       through LinkedIn's public guest pages — no login, free; postings need one of the words in the title (or two in the text) and none of the “Hide” words.
       For a narrower search (other keywords, a city, a company), search on linkedin.com and paste the link from the address bar
       (<code>linkedin.com/jobs/search/?keywords=…</code>). LinkedIn may limit requests for a while if searches run too often.</p>
-    <p class="muted">Telegram: public channels only (<code>@channel</code> or <code>t.me/channel</code>) — Claude reads the latest posts from the channel's web preview.</p>
+    <p class="muted">Telegram: public channels only (<code>@channel</code> or <code>t.me/channel</code>) — The AI reads the latest posts from the channel's web preview.</p>
     <form id="sourceForm" class="addForm sourceForm">
       <input id="sourceInput" placeholder="Company board (job-boards.greenhouse.io/discord), LinkedIn search link, site link or @telegram_channel" autocomplete="off">
-      <input id="sourceNote" placeholder="Note for Claude (optional), e.g. “only C++ posts”" autocomplete="off">
+      <input id="sourceNote" placeholder="Note for AI (optional), e.g. “only C++ posts”" autocomplete="off">
       <button type="submit" class="primary">Add</button>
     </form>
     <label id="srcAllRow" class="check srcAll hidden"><input type="checkbox" id="srcAll"> Use all sources in search</label>
@@ -131,7 +131,7 @@
 <main id="viewSetup" class="view hidden">
   <div class="sourcesWrap settingsWrap setupWrap">
     <h1>Set up Job Hunter</h1>
-    <p class="muted">Job Hunter asks Claude Code (with your claude.ai subscription) to find and score jobs and write CVs. Three steps:</p>
+    <p class="muted">Job Hunter uses the AI provider selected in Settings to find and score jobs and write CVs.</p>
     <ol id="setupSteps" class="setupSteps"><li class="muted">Checking…</li></ol>
     <div class="testRow"><button id="setupCheck">Check again</button><span id="setupMsg" class="muted"></span></div>
   </div>
@@ -140,8 +140,10 @@
 <main id="viewSettings" class="view hidden">
   <div class="sourcesWrap settingsWrap">
     <section class="setBox">
-      <h2>Models</h2>
-      <p class="muted">Which Claude model and how much thinking each action uses. Bigger models and higher effort are smarter
+      <h2>AI provider &amp; models</h2>
+      <label class="field">AI provider<select id="aiProvider" data-key="aiProvider"><option value="claude">Claude Code</option><option value="codex">OpenAI Codex</option></select></label>
+      <p id="codexNote" class="muted hidden">Choose a model for each action below. Start with GPT-6.1 Sol for general tasks, Luna for quick routine work, or Astra for complex tasks. Previous versions are listed separately; availability depends on your account. CLI default uses your Codex configuration. Codex uses your local CLI login: install with <code>npm install -g @openai/codex</code>, then run <code>codex login</code>. Perplexity and Claude MCP settings apply only to Claude.</p>
+      <p class="muted">Which AI model and how much thinking each action uses. Bigger models and higher effort are smarter
         but slower and use more of your subscription limits. Changes apply to the next run, no restart needed.</p>
       <div class="presets">
         <span class="muted">Presets:</span>
@@ -157,7 +159,7 @@
 
     <section class="setBox">
       <h2>Languages</h2>
-      <p class="muted">What language Claude writes in. “Same as the posting” follows the language of the job posting (or the form).
+      <p class="muted">What language the AI writes in. “Same as the posting” follows the language of the job posting (or the form).
         A one-off language for a single CV can be picked in the Generate box of a job.</p>
       <div class="setGrid">
         <label class="field">Tailored resume<select class="langSel" data-key="languages.cv"></select></label>
@@ -212,21 +214,22 @@
     </section>
 
     <section class="setBox">
-      <h2>Claude Code &amp; tools</h2>
+      <h2>AI tools</h2>
       <div class="setGrid wide">
         <label class="field">Path to claude (empty = from PATH)<input data-key="claudeBin" placeholder="claude"></label>
+        <label class="field">Path to codex (empty = from PATH)<input data-key="codexBin" placeholder="codex"></label>
         <label class="field">MCP config file (e.g. Perplexity with your own API key)<input data-key="mcpConfig" placeholder="mcp-perplexity.json"></label>
         <label class="field">Extra allowed tools, comma-separated<input data-key="extraAllowedTools" placeholder="mcp__perplexity"></label>
-        <label class="field">Claude runs at once<input type="number" min="1" max="6" data-key="maxParallel"></label>
+        <label class="field">AI runs at once<input type="number" min="1" max="6" data-key="maxParallel"></label>
       </div>
-      <p class="muted small">Runs at once: how many Claude tasks go at the same time, the rest wait in line. Search, form filling
+      <p class="muted small">Runs at once: how many AI tasks go at the same time, the rest wait in line. Search, form filling
         and resume sync still run one at a time. More at once uses your limits faster.</p>
-      <div class="testRow"><button id="testClaude">Test Claude</button><button id="openSetup" class="ghost">Setup…</button><span id="testClaudeMsg" class="muted"></span></div>
+      <div class="testRow"><button id="testClaude">Test AI</button><button id="openSetup" class="ghost">Setup…</button><span id="testClaudeMsg" class="muted"></span></div>
     </section>
 
     <section class="setBox">
       <h2>Usage <select id="usageDays" aria-label="Period"><option value="1">Today</option><option value="7">7 days</option><option value="30" selected>30 days</option><option value="365">Year</option></select></h2>
-      <p class="muted">Claude runs per action. “API value” is what the same tokens would cost on the paid API — you don't pay it
+      <p class="muted">AI runs per action. Codex does not report a dollar cost here (shown as zero). “API value” is what the same tokens would cost on the paid API — you don't pay it
         with a subscription, but it shows which actions use the most of your limits.</p>
       <div id="usageTable"></div>
     </section>

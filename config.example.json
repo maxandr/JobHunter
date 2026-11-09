@@ -1,6 +1,10 @@
 {
   "port": 4317,
   "claudeBin": "",
+  "aiProvider": "claude",
+  "codexBin": "",
+  "codexModels": {},
+  "codexEffort": {},
   "resumeDrive": "",
   "resumePdfPath": "",
   "models": { "search": "sonnet", "analyze": "sonnet", "tailor": "sonnet", "resume": "sonnet", "apply": "sonnet" },

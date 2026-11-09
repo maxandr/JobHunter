@@ -10,6 +10,7 @@ const actions = require('./lib/actions');
 const apply = require('./lib/apply');
 const { syncResume, draftProfile } = require('./lib/resume-sync');
 const { taskContext, resetClaude, claudeVersion, checkPerplexity, perplexityStatus } = require('./lib/claude');
+const { checkAgent } = require('./lib/ai');
 const setup = require('./lib/setup');
 const { htmlToPdf, findBrowser } = require('./lib/pdf');
 const { findBoard } = require('./lib/ats-boards');
@@ -62,7 +63,7 @@ async function start(next) {
   next._abort = new AbortController();
   const onLog = line => { next.log.push(line); if (next.log.length > 40) next.log.shift(); };
   try {
-    next.result = await taskContext.run({ signal: next._abort.signal }, () => next._fn(onLog));
+    next.result = await taskContext.run({ signal: next._abort.signal, onAgent: agent => { next.agent = agent; } }, () => next._fn(onLog));
     next.status = next._abort.signal.aborted ? 'cancelled' : 'done';
   } catch (e) {
     if (next._abort.signal.aborted) {
@@ -286,6 +287,13 @@ async function handle(req, res) {
     pump(); // maxParallel may have gone up
     return send(res, 200, { ...r, restart: r.config.port !== config.port, nextAutoSearchAt: nextAutoSearchAt() });
   }
+  if (p === '/api/settings/test-ai' && m === 'POST') {
+    let cfg;
+    try { cfg = store.validateConfig(await readBody(req)); }
+    catch (e) { return send(res, 400, { error: e.message }); }
+    const r = await checkAgent(cfg);
+    return send(res, 200, r.ok && r.capabilities.perplexity ? { ...r, perplexity: await checkPerplexity(cfg.claudeBin) } : r);
+  }
   if (p === '/api/settings/test-claude' && m === 'POST') {
     resetClaude();
     const bin = store.config().claudeBin;
@@ -487,7 +495,7 @@ server.on('listening', () => {
     enqueue('resume', 'Checking the resume PDF for changes', log => syncResume({ onLog: log }));
   }
   // Find out if the claude.ai account has Perplexity, so runs don't offer Claude a tool it doesn't have.
-  checkPerplexity(config.claudeBin);
+  if (config.aiProvider !== 'codex') checkPerplexity(config.claudeBin);
   setInterval(autoSearchTick, 60000);
   setTimeout(autoSearchTick, 15000);
   if (process.argv.includes('--open')) openBrowser();

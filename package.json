@@ -2,10 +2,11 @@
   "name": "job-hunter",
   "version": "1.0.0",
   "private": true,
-  "description": "Local job search app that uses Claude Code (claude -p) under the hood",
+  "description": "Local job search app with Claude Code and Codex agents",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js --open"
+    "start": "node server.js --open",
+    "test": "node --test test/*.test.js"
   },
   "engines": { "node": ">=18" }
 }

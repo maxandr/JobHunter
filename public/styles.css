@@ -80,6 +80,7 @@ input[type="checkbox"] { min-height: 0; accent-color: var(--accent); width: 14px
 .task { display: flex; gap: 10px; align-items: center; min-height: 26px; }
 .task .st { font-weight: 600; min-width: 64px; display: inline-flex; align-items: center; }
 .task.running .st { color: var(--accent); }
+.task .taskModel { color: var(--accent); font-size: 12px; white-space: nowrap; border: 1px solid currentColor; border-radius: 5px; padding: 1px 6px; }
 .task.failed .st { color: var(--bad); }
 .task.done .st { color: var(--good); }
 .task.cancelled .st { color: var(--muted); }

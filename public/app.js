@@ -110,9 +110,11 @@ function renderTasks() {
     if (t.status === 'failed') info =`<span>${esc(t.error)}</span>`;
     const st = t.status === 'running' ? '<span class="spinner"></span>Working' : t.status === 'queued' ? 'Queued'
       : t.status === 'done' ? 'Done' : t.status === 'cancelled' ? 'Stopped' : 'Failed';
+    const agent = t.status === 'running' && t.agent
+      ? `<span class="taskModel" title="${esc(t.agent.name)}">${esc(t.agent.model || t.agent.name + ' · CLI default')}</span>` : '';
     const stop = t.status === 'running' || t.status === 'queued' ? `<button class="ghost taskStop" data-task="${t.id}">Stop</button>`
       : `<button class="ghost taskClose" data-task="${t.id}" title="Close">✕</button>`;
-    return `<div class="task ${t.status}" title="${esc(t.log.join('\n'))}"><span class="st">${st}</span><span>${esc(t.label)}</span>${info}${stop}</div>`;
+    return `<div class="task ${t.status}" title="${esc(t.log.join('\n'))}"><span class="st">${st}</span>${agent}<span>${esc(t.label)}</span>${info}${stop}</div>`;
   }).join('');
   $('#searchBtn').disabled = S.tasks.some(t => t.kind === 'search' && (t.status === 'running' || t.status === 'queued'));
 }
@@ -867,10 +869,10 @@ document.addEventListener('click', async e => {
   } else if (t.id === 'resetSettings') {
     fillSettings(SET.cfg); setMsg('');
   } else if (t.id === 'testClaude') {
-    t.disabled = true; $('#testClaudeMsg').textContent = 'Starting claude…';
+    t.disabled = true; $('#testClaudeMsg').textContent = 'Checking AI installation and login…';
     try {
-      const r = await api('/api/settings/test-claude', { method: 'POST' });
-      $('#testClaudeMsg').textContent = r.ok ? `OK: ${r.version}` : `Failed (${r.cmd}): ${r.error}`;
+      const r = await api('/api/settings/test-ai', { method: 'POST', body: collectSettings() });
+      $('#testClaudeMsg').textContent = r.ok ? `Installed and signed in: ${r.version}. Model access is checked when a task runs.` : `Failed (${r.cmd}): ${r.error}`;
       if (r.perplexity) renderPerplexity(r.perplexity);
       $('#testClaudeMsg').className = r.ok ? 'okText' : 'errText';
     } catch (err) { $('#testClaudeMsg').textContent = err.message; $('#testClaudeMsg').className = 'errText'; }
@@ -1184,6 +1186,20 @@ const ACTION_INFO = {
 };
 const MODEL_OPTS = [['', 'CLI default'], ['haiku', 'Haiku — fast, light'], ['sonnet', 'Sonnet — balanced'], ['opus', 'Opus — smartest']];
 const MODEL_EXACT = [['claude-fable-5-1', 'Fable 5.1'], ['claude-opus-5-5', 'Opus 5.5'], ['claude-sonnet-5-5', 'Sonnet 5.5'], ['claude-haiku-5-5', 'Haiku 5.5']];
+// Verified against the local Codex catalog and official model docs (2026-11-09).
+const CODEX_MODELS = [
+  ['', 'CLI default'],
+  ['gpt-6.1-sol', 'GPT-6.1 Sol — balanced, recommended'],
+  ['gpt-6-astra', 'GPT-6 Astra — complex tasks'],
+  ['gpt-6.1-terra', 'GPT-6.1 Terra — fast, efficient'],
+  ['gpt-6-luna', 'GPT-6 Luna — light, routine tasks'],
+];
+const CODEX_PREVIOUS_MODELS = [
+  ['gpt-6-sol', 'GPT-6 Sol'],
+  ['gpt-5.6-sol', 'GPT-5.6 Sol'],
+  ['gpt-5.6-terra', 'GPT-5.6 Terra'],
+  ['gpt-5.6-luna', 'GPT-5.6 Luna'],
+];
 const EFFORT_OPTS = [['', 'CLI default'], ['low', 'Low'], ['medium', 'Medium'], ['high', 'High'], ['xhigh', 'Extra high'], ['max', 'Max']];
 const PRESETS = {
   economy: { all: ['haiku', 'low'] },
@@ -1205,7 +1221,6 @@ function fillLangSelects(root) {
 fillLangSelects(document);
 fillLangSelects($('#detailTpl').content);
 const SET = { cfg: null, actions: [] };
-const known = v => MODEL_OPTS.concat(MODEL_EXACT).some(([k]) => k === v);
 const getPath = (o, p) => p.split('.').reduce((x, k) => x == null ? x : x[k], o);
 function setPath(o, p, v) {
   const ks = p.split('.'); const last = ks.pop();
@@ -1217,27 +1232,39 @@ function setMsg(text, err) {
 }
 
 function renderModelTable(cfg) {
+  const codex = cfg.aiProvider === 'codex';
+  const models = codex ? cfg.codexModels : cfg.models;
+  const efforts = codex ? cfg.codexEffort : cfg.effort;
+  const modelOpts = codex ? CODEX_MODELS : MODEL_OPTS;
+  const exactOpts = codex ? CODEX_PREVIOUS_MODELS : MODEL_EXACT;
+  const effortOpts = codex ? [...EFFORT_OPTS, ['ultra', 'Ultra']] : EFFORT_OPTS;
+  $('#modelTable').dataset.provider = cfg.aiProvider || 'claude';
+  $('#codexNote').classList.toggle('hidden', !codex);
+  $('#viewSettings .presets').classList.toggle('hidden', codex);
+  $('#modelTable').nextElementSibling.classList.toggle('hidden', codex);
+  $('#viewSettings [data-key="perplexity"]').disabled = codex;
   const opts = (list, v) => list.map(([k, l]) => `<option value="${esc(k)}" ${k === v ? 'selected' : ''}>${esc(l)}</option>`).join('');
   $('#modelTable').innerHTML = `<div class="mRow mHead"><span>Action</span><span>Model</span><span>Effort</span><span>Timeout, min</span></div>`
     + SET.actions.map(a => {
-      const m = cfg.models[a] || ''; const custom = !known(m);
+      const m = (models || {})[a] || ''; const custom = !modelOpts.concat(exactOpts).some(([v]) => v === m);
       const [label, hint] = ACTION_INFO[a] || [a, ''];
       const timeout = a === 'search'
         ? `<input type="number" min="2" max="120" data-key="searchTimeoutMinutes" value="${esc(cfg.searchTimeoutMinutes)}">`
         : `<input type="number" min="1" max="120" class="setTo" data-a="${a}" value="${esc(cfg.timeouts[a] ?? '')}">`;
       return `<div class="mRow">
         <span><b>${esc(label)}</b><small class="muted">${esc(hint)}</small></span>
-        <span class="mModel"><select class="setModel" data-a="${a}">${opts(MODEL_OPTS, m)}
-            <optgroup label="Exact versions">${opts(MODEL_EXACT, m)}</optgroup>
+        <span class="mModel"><select class="setModel" data-a="${a}">${opts(modelOpts, m)}
+            <optgroup label="${codex ? 'Previous versions' : 'Exact versions'}">${opts(exactOpts, m)}</optgroup>
             <option value="__custom" ${custom ? 'selected' : ''}>Custom…</option></select>
           <input class="setModelCustom ${custom ? '' : 'hidden'}" data-a="${a}" value="${custom ? esc(m) : ''}" placeholder="model name" autocomplete="off"></span>
-        <span><select class="setEffort" data-a="${a}">${opts(EFFORT_OPTS, cfg.effort[a] || '')}</select></span>
+        <span><select class="setEffort" data-a="${a}">${opts(effortOpts.filter(([v]) => !(codex && /-luna$/.test(m) && v === 'ultra')), (efforts || {})[a] || '')}</select></span>
         <span>${timeout}</span>
       </div>`;
     }).join('');
 }
 
 function fillSettings(cfg) {
+  SET.draft = JSON.parse(JSON.stringify(cfg));
   renderModelTable(cfg);
   document.querySelectorAll('#viewSettings [data-key]').forEach(el => {
     const v = getPath(cfg, el.dataset.key);
@@ -1252,15 +1279,19 @@ function fillSettings(cfg) {
 }
 
 function collectSettings() {
-  const out = JSON.parse(JSON.stringify(SET.cfg));
+  const out = JSON.parse(JSON.stringify(SET.draft || SET.cfg));
+  const codex = $('#modelTable').dataset.provider === 'codex';
+  const modelsKey = codex ? 'codexModels' : 'models';
+  const effortKey = codex ? 'codexEffort' : 'effort';
+  out[modelsKey] ||= {}; out[effortKey] ||= {};
   document.querySelectorAll('#viewSettings [data-key]').forEach(el => {
     const v = el.type === 'checkbox' ? el.checked : el.type === 'number' ? Number(el.value) : el.value.trim();
     setPath(out, el.dataset.key, v);
   });
   for (const a of SET.actions) {
     const sel = $(`.setModel[data-a="${a}"]`).value;
-    out.models[a] = sel === '__custom' ? $(`.setModelCustom[data-a="${a}"]`).value.trim() : sel;
-    out.effort[a] = $(`.setEffort[data-a="${a}"]`).value;
+    out[modelsKey][a] = sel === '__custom' ? $(`.setModelCustom[data-a="${a}"]`).value.trim() : sel;
+    out[effortKey][a] = $(`.setEffort[data-a="${a}"]`).value;
     const to = $(`.setTo[data-a="${a}"]`);
     if (to) out.timeouts[a] = Number(to.value);
   }
@@ -1306,7 +1337,7 @@ function renderAutoNext(at) {
 async function loadUsage() {
   const u = await api('/api/usage?days=' + $('#usageDays').value);
   const rows = u.rows.sort((a, b) => b.costUsd - a.costUsd);
-  if (!rows.length) { $('#usageTable').innerHTML = '<p class="muted">No Claude runs in this period yet.</p>'; return; }
+  if (!rows.length) { $('#usageTable').innerHTML = '<p class="muted">No AI runs in this period yet.</p>'; return; }
   const sum = rows.reduce((t, r) => ({ runs: t.runs + r.runs, failed: t.failed + r.failed, costUsd: t.costUsd + r.costUsd }), { runs: 0, failed: 0, costUsd: 0 });
   const money = n => '$' + n.toFixed(2);
   $('#usageTable').innerHTML = `<table class="usage"><thead><tr><th>Action</th><th>Runs</th><th>Failed</th><th>Avg time</th><th>API value</th><th>Models</th></tr></thead><tbody>
@@ -1333,8 +1364,24 @@ async function loadSettings() {
 
 document.addEventListener('input', e => {
   if (!e.target.closest('#viewSettings') || e.target.id === 'rawConfig') return;
+  if (e.target.id === 'aiProvider') {
+    const draft = collectSettings();
+    fillSettings(draft);
+    $('#testClaudeMsg').textContent = '';
+  }
   if (e.target.classList.contains('setModel')) {
     $(`.setModelCustom[data-a="${e.target.dataset.a}"]`).classList.toggle('hidden', e.target.value !== '__custom');
+  }
+  if ($('#modelTable').dataset.provider === 'codex' && (e.target.classList.contains('setModel') || e.target.classList.contains('setModelCustom'))) {
+    const a = e.target.dataset.a;
+    const sel = $(`.setModel[data-a="${a}"]`);
+    const model = sel.value === '__custom' ? $(`.setModelCustom[data-a="${a}"]`).value.trim() : sel.value;
+    const effort = $(`.setEffort[data-a="${a}"]`);
+    const ultra = [...effort.options].find(o => o.value === 'ultra');
+    if (/-luna$/.test(model)) {
+      if (effort.value === 'ultra') effort.value = 'max';
+      ultra?.remove();
+    } else if (!ultra) effort.add(new Option('Ultra', 'ultra'));
   }
   if (e.target.id === 'usageDays') return loadUsage();
   setMsg('Unsaved changes');
@@ -1350,21 +1397,29 @@ async function loadSetup() {
   let st;
   try { st = await api('/api/setup'); } catch (err) { return setupMsg(err.message, true); }
   showSetupTab(st);
+  if (st.provider === 'codex') {
+    $('#setupSteps').innerHTML = `<li class="${st.agent.ok ? 'ok' : ''}"><h3>OpenAI Codex</h3>
+      <p>${st.agent.ok ? esc(st.agent.version) : esc(st.agent.error || 'Codex is not ready')}</p>
+      <p>Install: <code>npm install -g @openai/codex</code>. Sign in from a terminal: <code>codex login</code>, then press Check again.</p></li>
+      <li class="${st.resume ? 'ok' : ''}"><h3>Resume</h3><p>${st.resume ? 'Resume is ready.' : 'Add your resume in Resume &amp; profile, or import a PDF in Settings → Resume.'}</p></li>`;
+    setupMsg(st.done ? 'Ready to use Codex.' : 'Complete the steps above, then check again.');
+    return;
+  }
   const installing = busyTask('setup'), reading = busyTask('resume');
   const lastInstall = S.tasks.find(x => x.kind === 'setup');
   const step = (ok, title, body) => `<li class="${ok ? 'ok' : ''}"><h3>${title}</h3>${body}</li>`;
-  const claudeBody = st.claude.ok ? `<p class="muted">${esc(st.claude.version)} · ${esc(st.claude.cmd)}</p>`
+  const claudeBody = st.agent.installed ? `<p class="muted">${esc(st.agent.version)} · ${esc(st.agent.cmd)}</p>`
     : installing ? '<p><span class="spinner"></span>Installing… (a minute or two)</p>'
-    : `<p class="muted">Not found${st.claude.error ? ': ' + esc(st.claude.error) : ''}</p>
+    : `<p class="muted">Not found${st.agent.error ? ': ' + esc(st.agent.error) : ''}</p>
       ${lastInstall && lastInstall.status === 'failed' ? `<p class="errText">${esc(lastInstall.error)}</p>` : ''}
       <p class="setupAct"><button id="setupInstall" class="primary">Install Claude Code</button>
       <span class="muted small">Runs the official installer from claude.ai. Installed somewhere else? Set its path in Settings → Claude Code.</span></p>`;
-  const authBody = !st.claude.ok ? '<p class="muted">After step 1.</p>'
-    : st.auth.loggedIn ? `<p class="muted">${esc(st.auth.email)}${st.auth.subscriptionType ? ' · ' + esc(st.auth.subscriptionType) : ''}</p>`
+  const authBody = !st.agent.installed ? '<p class="muted">After step 1.</p>'
+    : st.agent.loggedIn ? `<p class="muted">${esc(st.agent.email)}${st.agent.subscriptionType ? ' · ' + esc(st.agent.subscriptionType) : ''}</p>`
     : `<p class="muted">Needs a Claude Pro or Max subscription.</p>
       <p class="setupAct"><button id="setupLogin" class="primary">Log in</button>
       <span class="muted small">Opens a window with a sign-in link</span></p>`;
-  const ready = st.claude.ok && st.auth.loggedIn;
+  const ready = st.agent.installed && st.agent.loggedIn;
   const resumeBody = st.resume
     ? `<p class="muted">${st.resumeSource ? 'From ' + esc(st.resumeSource) + '. ' : ''}${st.profile ? 'Check the drafted profile on the “Resume &amp; profile” tab.' : ''}</p>`
     : reading ? '<p><span class="spinner"></span>Reading your resume…</p>'
@@ -1373,13 +1428,13 @@ async function loadSetup() {
       <div class="applyRow"><input id="setupResumeInput" placeholder="https://docs.google.com/document/d/…  or  C:\\Users\\you\\resume.pdf" autocomplete="off" value="${esc(st.resumeSource)}">
       <button id="setupResume" class="primary" ${ready ? '' : 'disabled title="After steps 1 and 2"'}>Import</button>
       <button class="pickResume" ${ready ? '' : 'disabled title="After steps 1 and 2"'}>Choose PDF…</button></div>`;
-  $('#setupSteps').innerHTML = step(st.claude.ok, 'Install Claude Code', claudeBody)
-    + step(st.auth.loggedIn, 'Log in to your Claude account', authBody)
+  $('#setupSteps').innerHTML = step(st.agent.installed, 'Install Claude Code', claudeBody)
+    + step(st.agent.loggedIn, 'Log in to your Claude account', authBody)
     + step(st.resume, 'Add your resume', resumeBody);
   if (st.done) setupMsg('All set. Go to Jobs and press “Find new jobs”.');
   else if ($('#setupMsg').textContent.startsWith('All set')) setupMsg('');
   // Keep checking while something is in progress and the tab is open.
-  const waiting = installing || reading || (st.claude.ok && !st.auth.loggedIn && Date.now() - SETUP.loginAt < 5 * 60000);
+  const waiting = installing || reading || (st.agent.installed && !st.agent.loggedIn && Date.now() - SETUP.loginAt < 5 * 60000);
   if (waiting && !$('#viewSetup').classList.contains('hidden')) loadSetup.t = setTimeout(async () => { await refresh(); loadSetup(); }, 4000);
 }
 function showSetupTab(st) {
