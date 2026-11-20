@@ -58,7 +58,7 @@ What it does:
   is rendered by JavaScript, so Claude would see an empty page) and filters them by the words in the **Filter** block on the same tab:
   "Look for" — what to look for in a link, "Hide" — what to hide (such jobs are also removed from the results of any search).
   "Look for" words match the start of a word ("programmer" also finds "programmers", "engineer" — "engineering"; words of
-  3 letters or less, like "ue5", only whole words); "Hide" words match whole words only ("intern" does not hide "Internal Tools").
+  3 letters or less, like "aws", only whole words); "Hide" words match whole words only ("intern" does not hide "Internal Tools").
   Postings closest to your resume (by its words, rare ones counting more) go to Claude first when a source has more than its limit.
   The filter is stored in `data\source-filter.json`.
 - **Salary** — every job has a salary block. If the posting lists a range, that range is shown (green badge in the list).
@@ -74,7 +74,7 @@ What it does:
   for a LinkedIn request (up to 300 characters) with a "Copy message" button. Nothing is sent. Results are stored in `jobs.json`.
 - **Statuses and notes** — New → Interested → Applied → Interview → Offer / Rejected / Skipped.
   The application date is recorded the first time a job moves to Applied (an "applied 5d ago" badge in the list).
-  When skipping, you can give a reason ("Unity only", "US residents only") — it is added to the
+  When skipping, you can give a reason ("Java only", "US residents only") — it is added to the
   "Not interested in" list in your profile, and future searches will skip such jobs.
 - **Generate** — a resume tailored to a specific job (ATS keywords, no invented experience) + a cover letter + a list of requirements you don't meet.
   After Claude responds, the code checks the resume itself: it replaces "AI words" (leveraged → used, em dash → comma),

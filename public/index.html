@@ -114,18 +114,18 @@
     <p class="muted">Telegram: public channels only (<code>@channel</code> or <code>t.me/channel</code>) — The AI reads the latest posts from the channel's web preview.</p>
     <form id="sourceForm" class="addForm sourceForm">
       <input id="sourceInput" placeholder="Company board (job-boards.greenhouse.io/discord), LinkedIn search link, site link or @telegram_channel" autocomplete="off">
-      <input id="sourceNote" placeholder="Note for AI (optional), e.g. “only C++ posts”" autocomplete="off">
+      <input id="sourceNote" placeholder="Note for AI (optional), e.g. “only backend posts”" autocomplete="off">
       <button type="submit" class="primary">Add</button>
     </form>
     <label id="srcAllRow" class="check srcAll hidden"><input type="checkbox" id="srcAll"> Use all sources in search</label>
     <div id="sourceList" class="sourceList"></div>
     <div class="filterBox">
       <h2>Filter</h2>
-      <p class="muted">Comma-separated. “Look for” matches the start of a word (“programmer” also finds “programmers”; words of 3 letters or less, like “ue5”, only whole words);
+      <p class="muted">Comma-separated. “Look for” matches the start of a word (“programmer” also finds “programmers”; words of 3 letters or less, like “aws”, only whole words);
         “Hide” matches whole words only (“intern” does not hide “Internal Tools”).
         Words to look for pick postings from the sites' link lists; words to hide also remove matching job titles from every search.</p>
-      <label class="field">Look for<input id="filterInclude" autocomplete="off" placeholder="example: unreal, gameplay, c++"></label>
-      <label class="field">Hide<input id="filterExclude" autocomplete="off" placeholder="example: rendering, technical artist, qa"></label>
+      <label class="field">Look for<input id="filterInclude" autocomplete="off" placeholder="example: python, backend, data engineer"></label>
+      <label class="field">Hide<input id="filterExclude" autocomplete="off" placeholder="example: intern, sales, qa"></label>
       <div class="saveRow sourcesRun"><span id="filterMsg" class="muted"></span><button id="saveFilter">Save filter</button></div>
     </div>
     <div class="saveRow sourcesRun">
@@ -271,7 +271,7 @@
   </div>
   <div class="skipBox hidden">
     <input class="dSkipReason" maxlength="200" autocomplete="off"
-      placeholder="Why skip? (optional, e.g. “Unity only”, “US residents only”) — added to your profile so searches avoid it">
+      placeholder="Why skip? (optional, e.g. “Java only”, “US residents only”) — added to your profile so searches avoid it">
     <button class="dSkipSave ghost">Save reason</button>
   </div>
   <p class="skipDone muted hidden"></p>
