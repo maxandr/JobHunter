@@ -76,12 +76,19 @@
     </section>
     <section>
       <h2>Profile &amp; preferences</h2>
-      <p class="muted">Where you work from — used for location scoring, salary estimates and cover letters.</p>
+      <p class="muted">Where you work from and in which format — used for search, location scoring, salary estimates and cover letters.</p>
       <div class="setGrid candidate">
         <label class="field">Where you live (country)<input id="candLivesIn" placeholder="e.g. Germany" autocomplete="off"></label>
         <label class="field">Time zone<input id="candTimezone" placeholder="e.g. UTC+1" autocomplete="off"></label>
         <label class="field">Salary currency<input id="candCurrency" placeholder="USD" maxlength="3" autocomplete="off"></label>
       </div>
+      <div class="workModes" title="Hybrid and on-site count only with the office in your country">
+        <span>Work format:</span>
+        <label class="check"><input type="checkbox" id="candRemote"> Remote</label>
+        <label class="check"><input type="checkbox" id="candHybrid"> Hybrid</label>
+        <label class="check"><input type="checkbox" id="candOnsite"> On-site</label>
+      </div>
+      <label class="check workLocked"><input type="checkbox" id="candHideLocked"> Hide remote roles limited to other countries (e.g. “US only”, “Canada only”)</label>
       <p class="muted">What you are looking for: roles, location limits, languages, salary, deal-breakers. Used for search and scoring.
         If empty, Claude drafts it from the resume once the resume is in — check it and fill in the gaps.</p>
       <textarea id="profileText" spellcheck="false"></textarea>

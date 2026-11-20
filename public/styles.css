@@ -294,6 +294,9 @@ input[type="checkbox"] { min-height: 0; accent-color: var(--accent); width: 14px
 .setGrid .field input { width: 100%; color: var(--ink); }
 .setGrid.candidate { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); margin: 0 0 14px; }
 .check { display: flex; gap: 8px; align-items: center; margin: 8px 0; cursor: pointer; }
+.workModes { display: flex; flex-wrap: wrap; align-items: center; gap: 0 16px; margin: -6px 0 0; }
+.workModes .check { margin: 4px 0; }
+.check.workLocked { margin: 4px 0 14px; }
 .browserList { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
 .okBadge { color: var(--good); }
 .testRow { display: flex; gap: 10px; align-items: center; margin-top: 4px; }

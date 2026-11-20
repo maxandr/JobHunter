@@ -1046,7 +1046,9 @@ document.addEventListener('click', async e => {
         .finally(() => { if (Date.now() - started < 60000) setTimeout(wait, 1000); });
     }, 1500);
   } else if (t.id === 'saveTexts') {
-    const candidate = { livesIn: $('#candLivesIn').value, timezone: $('#candTimezone').value, currency: $('#candCurrency').value };
+    const candidate = { livesIn: $('#candLivesIn').value, timezone: $('#candTimezone').value, currency: $('#candCurrency').value,
+      workModes: [['remote', '#candRemote'], ['hybrid', '#candHybrid'], ['onsite', '#candOnsite']].filter(([, id]) => $(id).checked).map(([m]) => m),
+      hideRegionLocked: $('#candHideLocked').checked };
     let r;
     try {
       r = await api('/api/texts', { method: 'PUT', body: { resume: $('#resumeText').value, profile: $('#profileText').value, candidate } });
@@ -1485,6 +1487,11 @@ async function loadTexts() {
   $('#candLivesIn').value = t.candidate.livesIn;
   $('#candTimezone').value = t.candidate.timezone;
   $('#candCurrency').value = t.candidate.currency;
+  const modes = t.candidate.workModes || ['remote'];
+  $('#candRemote').checked = modes.includes('remote');
+  $('#candHybrid').checked = modes.includes('hybrid');
+  $('#candOnsite').checked = modes.includes('onsite');
+  $('#candHideLocked').checked = t.candidate.hideRegionLocked !== false;
 }
 
 // Drag the list pane's right edge to resize it; the width is remembered. Double-click resets it.
