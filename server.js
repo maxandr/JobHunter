@@ -182,7 +182,7 @@ async function handle(req, res) {
     return send(res, 200, body, MIME[path.extname(name)] || 'application/octet-stream');
   }
 
-  // Lets a second job-hunter.exe tell whether the server on this port belongs to its own folder.
+  // Lets a second copy started from this folder tell whether the server on this port belongs to its own folder.
   if (p === '/api/root' && m === 'GET') return send(res, 200, { root: store.ROOT });
 
   if (p === '/api/state' && m === 'GET') {
@@ -466,11 +466,8 @@ function openBrowser() {
   exec(process.platform === 'win32' ? `start "" "${u}"` : process.platform === 'darwin' ? `open ${u}` : `xdg-open ${u}`);
 }
 
-let listenTries = 0;
 server.on('error', e => {
   if (e.code !== 'EADDRINUSE') throw e;
-  // A restarted job-hunter.exe may start before the old one has let the port go: wait a little.
-  if (process.env.JOB_HUNTER_RESTARTED && port === config.port && ++listenTries < 20) return setTimeout(listen, 500);
   fetch(`http://127.0.0.1:${port}/api/root`).then(r => r.ok ? r.json() : {}).catch(() => ({})).then(({ root }) => {
     if (root && path.resolve(root).toLowerCase() === path.resolve(store.ROOT).toLowerCase()) {
       // Started a second time from the same folder: the app is already running, just show it.
@@ -508,12 +505,6 @@ function shutdown(code) {
   for (const t of tasks) if (t.status === 'running' && t._abort) t._abort.abort();
   server.close();
   setTimeout(() => {
-    // job-hunter.exe runs without start.bat, so it starts its replacement itself, in a new window.
-    if (code === RESTART_CODE && store.isSea()) {
-      require('node:child_process').exec(`start "Job Hunter" "${process.execPath}"`,
-        { env: { ...process.env, JOB_HUNTER_RESTARTED: '1' } }).on('exit', () => process.exit(0));
-      return;
-    }
     process.exit(code);
   }, 300);
 }

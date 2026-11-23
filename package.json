@@ -2,6 +2,7 @@
   "name": "job-hunter",
   "version": "1.0.0",
   "private": true,
+  "license": "MIT",
   "description": "Local job search app with Claude Code and Codex agents",
   "main": "server.js",
   "scripts": {

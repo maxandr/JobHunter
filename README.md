@@ -30,8 +30,7 @@ without saving the draft; model access is verified when a task runs.
 
 Codex execution and structured output follow the
 [official non-interactive mode documentation](https://learn.chatgpt.com/docs/non-interactive-mode).
-After updating the source, restart via `start.bat`. If you use the standalone
-`job-hunter.exe`, rebuild it with `build.bat` to include source changes.
+After updating the source, restart via `start.bat`.
 
 What it does:
 - **Find new jobs** — Claude searches for open positions matching your profile, drops duplicates and closed listings, and gives each a 0–100 match score.
@@ -112,25 +111,23 @@ What it does:
 
 ## Requirements
 
+- Windows.
+- [Node.js](https://nodejs.org) 18 or newer (the LTS installer is fine). There is no `npm install`: the app has no dependencies.
 - Claude Code logged in with your subscription: running `claude` in a terminal should work without errors.
-  The native installer doesn't need Node.js: in PowerShell run `irm https://claude.ai/install.ps1 | iex`, then `claude` once to log in.
-- Nothing else: `job-hunter.exe` is one file with everything inside (no Node.js needed).
+  In PowerShell run `irm https://claude.ai/install.ps1 | iex`, then `claude` once to log in.
+  Or the Codex CLI instead (see the top of this file).
 
 ## Getting started
 
-1. Put **job-hunter.exe** in an empty folder, e.g. `C:\Users\<you>\Documents\JobHunter`.
-2. Double-click it — `http://localhost:4317` opens in your browser. Keep its black window open while you use the app.
-   Windows may warn about an unknown app (the exe isn't signed): click "More info" → "Run anyway".
-   Your data (`data\`) and the browser extension (`extension\`) appear in the same folder.
-   Double-clicking it again while it runs just opens the page.
+1. Download the code: on GitHub press **Code → Download ZIP** and unpack it, e.g. to `C:\Users\<you>\Documents\JobHunter`
+   (or `git clone` it).
+2. Double-click **start.bat** — `http://localhost:4317` opens in your browser. Keep its black window open while you use the app.
+   Your data appears in the `data\` folder next to it. Starting it again while it runs just opens the page.
 3. On the **Resume & profile** tab, fill in or check your resume and profile.
 4. Click **Find new jobs**. The first search takes 3–15 minutes.
 
-### Running from source
-
-With Node.js 18+ installed, double-click **start.bat** in the source folder (it runs `node server.js`).
-To make `job-hunter.exe`, run **build.bat** (needs Node.js 20+ and internet): it makes `job-hunter.exe` in the same folder.
-The web page and the extension are built into the exe, so after changing them, run build.bat again.
+To update, unpack the new version over the old folder (or `git pull`). `data\` and `config.json` are not part of the
+download, so your resume, jobs and settings are kept. Then restart start.bat and press ↻ on the extension.
 
 ## Settings (config.json)
 
@@ -185,7 +182,7 @@ Yes. The app costs nothing and has no paid features. The AI work runs on your ow
 (or Codex) account, so it uses your plan's limits. A search uses a noticeable share; a CV uses a little.
 
 **What do I need to run it?**
-Windows and Claude Code logged in with a plan that includes it (running `claude` in a terminal should work),
+Windows, Node.js 18+, and Claude Code logged in with a plan that includes it (running `claude` in a terminal should work),
 or the Codex CLI logged in with `codex login`. No API key is needed. See [Requirements](#requirements).
 
 **Where does my resume go?**
@@ -216,3 +213,18 @@ Not yet. The app is built and tested on Windows. Mac support is planned.
 - Every action is a separate `claude -p` run. Up to `maxParallel` (2) runs go at once; short tasks (link analysis, CV, form) are queued ahead of searches. A search uses a noticeable share of your limits, CV tailoring uses a little.
 - The app submits an application only via the **Try to auto apply** button; everything else you submit yourself.
 - Claude can misjudge jobs — open the link before applying and reread the resume before sending.
+- The browser extension asks for access to all sites because application forms can be on any site. It acts only when you
+  press "Open & fill" or "Try to auto apply", and talks only to the local server.
+- Your data in `data\` is stored as plain files, not encrypted. See [SECURITY.md](SECURITY.md) for details and how to report a problem.
+
+## Disclaimer
+
+Use at your own risk. This is a personal tool, not affiliated with LinkedIn, Anthropic, OpenAI or any job site.
+Reading LinkedIn's guest pages and filling forms automatically may go against some sites' terms of use, and a site may
+limit or block you for it. You are responsible for what you send to employers: check every CV, letter and form before it goes out.
+AI runs use your own Claude or Codex plan and its limits.
+
+## License
+
+[MIT](LICENSE). Inter font: SIL Open Font License (`public/InterVariable.LICENSE.txt`).
+Scoring and ATS check logic ported from [Resume Matcher](https://github.com/srbhr/Resume-Matcher) (Apache-2.0).

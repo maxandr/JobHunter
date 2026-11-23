@@ -28,8 +28,3 @@ Desktop.ini
 
 ROADMAP.md
 
-# Build output (build.bat)
-dist/
-
-# Built by build.bat (about 90 MB, not for git)
-job-hunter.exe
