@@ -1,230 +1,107 @@
 # Job Hunter
 
-A local web app for job hunting. Choose Claude Code (`claude -p`) or OpenAI Codex
-(`codex exec`) in Settings → AI provider, then Save settings. All AI tasks use
-the selected agent, including search, scoring, CVs, letters, form answers and resume import.
-Existing configurations continue to use Claude.
+**A local job-search assistant that runs on your own Claude Code or Codex account.**
+It finds open positions, scores them against your resume, writes a tailored CV and cover letter
+for each one, and fills in application forms. You still press Submit.
 
-For Codex, install the CLI with `npm install -g @openai/codex`, run `codex login`
-in a terminal, and press **Test AI** in Settings. A custom CLI path can be set under
-AI tools. Each provider keeps its own models and effort settings. Codex defaults to
-the model in its CLI configuration. The model menu includes GPT-6.1 Sol, GPT-6 Astra,
-GPT-6.1 Terra and GPT-6 Luna, with GPT-6 Sol and GPT-5.6 versions grouped separately.
-Custom remains available for other model names. Availability depends on your account.
-Codex uses built-in web search; Claude's Perplexity connector and MCP settings are
-not passed to Codex. Codex runs in a read-only sandbox. PDF import uses its available
-local reading tools; if your environment cannot extract the PDF, paste the resume
-text in Resume & profile. Codex does not report a dollar cost here, so its API value
-is shown as zero (not a claim that the run is free).
+![License: MIT](https://img.shields.io/badge/license-MIT-blue)
+![Platform: Windows](https://img.shields.io/badge/platform-Windows-0078d4)
+![Node.js 18+](https://img.shields.io/badge/node-18%2B-339933)
+![No dependencies](https://img.shields.io/badge/dependencies-none-lightgrey)
 
-Agent integration lives in `lib/ai.js`: `runAgent({ prompt, schema, tools, config,
-cwd, action, timeoutMs, onLog })` returns `{ data, costUsd, durationMs }`.
-`tools` uses shared capabilities (`web`, `readFiles`), and `checkAgent(config)` returns
-installation/login status and capabilities. Adapters are registered in one place;
-task code does not choose a CLI. Both adapters honor task cancellation and timeouts.
-Run integration tests with `npm test`.
-Run `node test/settings-browser.js` for real-browser settings checks with mocked HTTP.
-Run `node test/agent-smoke.js` for optional live Codex checks (uses your account limits,
-public web search and a synthetic text file). Test AI checks installation and login
-without saving the draft; model access is verified when a task runs.
+- **Free.** No subscription of its own, no API key: AI runs use your Claude Code or Codex plan.
+- **Private.** Everything stays in a folder on your computer; the server is reachable only from it.
+- **Honest CVs.** The code checks every CV for numbers and skills that aren't in your resume.
 
-Codex execution and structured output follow the
-[official non-interactive mode documentation](https://learn.chatgpt.com/docs/non-interactive-mode).
-After updating the source, restart via `start.bat`.
+## Features
 
-What it does:
-- **Find new jobs** — Claude searches for open positions matching your profile, drops duplicates and closed listings, and gives each a 0–100 match score.
-- **Companies** — on the "Extra sources" tab, paste a company's job board link on Greenhouse, Lever, Ashby or Workable
-  (e.g. `job-boards.greenhouse.io/discord`), or its careers page if one of these boards is embedded there.
-  The app downloads all of the company's open postings through the platform's public API (free, no Claude tokens),
-  keeps new ones with none of the "Hide" words in the title and a "Look for" word in the title (or, failing that, two of them
-  in the posting text, if it is as close to your resume as a typical title match), and only those go to Claude for scoring
-  (up to 30 per company, the closest to your resume first). With "Search only these sources", if nothing is new, Claude is not run at all.
-- **LinkedIn** — every search also reads LinkedIn by itself: your "Look for" words (Extra sources tab) in your country
-  ("Resume & profile" tab → "Where you live") and worldwide (postings that mention "remote"). The app reads the newest results and the postings themselves through
-  LinkedIn's public guest pages (no login, no Claude tokens), keeps titles with a "Look for" word and no "Hide" word
-  (with free places left, it opens up to 6 more and keeps those whose text has two of the words),
-  drops ones already in your list or older than the search period, and sends up to 12 per search to Claude for scoring,
-  the closest to your resume first.
-  Turn it off in Settings → Search. For a narrower search, paste a linkedin.com job search link
-  (`linkedin.com/jobs/search/?keywords=...&location=...`) on the Extra sources tab (up to 25 postings from it).
-  These pages are unofficial and ignore LinkedIn's "Remote" filter (Claude checks who can apply from the posting text);
-  if searches run too often, LinkedIn may answer "429" for a while.
-- **Extra sources** — additional (optional) job sites and Telegram channels (`@channel`, `t.me/channel`, or a link to a site/search page).
-  "Find new jobs" checks them first, and the "Search only these sources" button searches only them.
-  Channels must be public: Claude reads the latest posts via the `t.me/s/<channel>` web preview. The list lives in `data\sources.json`.
-  For sites, the app itself collects job links from the page and from the sitemap (on sites like Hitmarker the list
-  is rendered by JavaScript, so Claude would see an empty page) and filters them by the words in the **Filter** block on the same tab:
-  "Look for" — what to look for in a link, "Hide" — what to hide (such jobs are also removed from the results of any search).
-  "Look for" words match the start of a word ("programmer" also finds "programmers", "engineer" — "engineering"; words of
-  3 letters or less, like "aws", only whole words); "Hide" words match whole words only ("intern" does not hide "Internal Tools").
-  Postings closest to your resume (by its words, rare ones counting more) go to Claude first when a source has more than its limit.
-  The filter is stored in `data\source-filter.json`.
-- **Salary** — every job has a salary block. If the posting lists a range, that range is shown (green badge in the list).
-  If there are no numbers, Claude looks up salary data (Glassdoor, Levels.fyi, Djinni, etc.) and shows an approximate range marked
-  "estimate", with an explanation and source links (a "≈ …" badge in the list). For older jobs the estimate appears after "↻ Refresh".
-- **Add a job manually** — paste a job link or the job text into the field at the top.
-- **People to contact** — the "Find HR & referrals" button in the job window. Claude searches (mostly LinkedIn via web search,
-  plus the company site and the rest of the web) for a recruiter or hiring manager for the role, checks whether the company has a
-  referral program, and picks 3 employees you could ask for a referral (engineers with a similar profile, ideally with
-  something in common with you). People from the job's city / office come first, then from the same country:
-  each one shows where they work and a "job location" / "same country" / "other location" badge; people from elsewhere
-  go to the end of the list. Each entry has a profile link, why this person, a confidence level, and a ready-made note
-  for a LinkedIn request (up to 300 characters) with a "Copy message" button. Nothing is sent. Results are stored in `jobs.json`.
-- **Statuses and notes** — New → Interested → Applied → Interview → Offer / Rejected / Skipped.
-  The application date is recorded the first time a job moves to Applied (an "applied 5d ago" badge in the list).
-  When skipping, you can give a reason ("Java only", "US residents only") — it is added to the
-  "Not interested in" list in your profile, and future searches will skip such jobs.
-- **Generate** — a resume tailored to a specific job (ATS keywords, no invented experience) + a cover letter + a list of requirements you don't meet.
-  After Claude responds, the code checks the resume itself: it replaces "AI words" (leveraged → used, em dash → comma),
-  looks for numbers and skills that are not in your base resume and profile, and for job keywords you have but that didn't make it into the CV.
-  If anything is found, Claude does a short second pass to fix it (about +1 minute). The same pass rewrites
-  weak bullets ("Worked on…", first person, too long). If a number disappears or something made up appears after the second pass,
-  the first version is kept. The letter is at most 1200 characters by default (Settings → "Cover letter, max characters"): it opens with "Hello <Company>," and keeps a plain, matter-of-fact tone (no flattery or eagerness).
-  On the Cover letter tab, **Regenerate letter** rewrites only the letter, with optional extra instructions (e.g. "don't mention where I live") and its own length limit.
-- **ATS score** — a tab next to the resume: how well the CV matches the job for an applicant tracking system (ATS), 0–100, "base → tailored".
-  It is computed by code, without Claude: job keywords (40%), skills (20%), exact job title under your name (15%), sections and contacts (15%),
-  consistent date format (10%). It also lists missing keywords, tips, and, in red, things that are not in your resume (check they aren't made up).
-  The score is recalculated after you edit the CV by hand. For older CVs, press Generate again.
-- **ATS check** — a button next to .pdf: builds the PDF and shows the text the way an ATS will read it, plus checks
-  (single column, contacts at the top, Experience / Education / Skills headings, no more than 2 pages, no lost keywords).
-  "Check another PDF…" lets you check any PDF of your own. To read PDFs, the page loads pdf.js from cdnjs (needs internet).
-  The scoring and check logic is ported from [Resume Matcher](https://github.com/srbhr/Resume-Matcher) (Apache-2.0).
-- Editing, copying, .md download and **Print / PDF** for resumes.
-- **Open & fill form** — opens the application page in a separate Edge/Chrome window and fills in the fields (name, contacts,
-  answers to questions, attaches the resume PDF). Nothing is submitted: filled fields are outlined in yellow, the rest and Submit are up to you.
-  - If the form is on a different page, paste it into the **Application form link** field (it is remembered for the job).
-  - **Try to auto apply** — if there is no tailored CV yet, it creates one first (1–3 minutes), then opens the application page, fills in the form, ticks consent boxes (data processing, privacy policy, terms — but not newsletters) and **clicks Send**. The job status becomes Applied. If required fields are left empty, the submit button isn't found, or the site doesn't confirm submission, it shows an error. After updating the code, reload the extension (the ↻ button on brave://extensions).
-  - **With the extension** (recommended) the form is filled right in your own browser, with your logins. One-time setup:
-    1. Open `brave://extensions` (`chrome://extensions` in Chrome, `edge://extensions` in Edge).
-    2. Turn on **Developer mode**.
-    3. **Load unpacked** → select the `extension` folder inside job-hunter.
-    4. Reload the app page. "Fills in this browser (extension connected)" appears under the buttons.
-    The extension only works together with the open app page and sends nothing anywhere except your local server.
-    It connects itself to app tabs that were already open when the browser started or the extension was reloaded.
-    If it isn't connected, "Open & fill" asks before opening a separate window, and the hint under the buttons
-    says when the loaded extension is older than the `extension` folder (press ↻ on it).
-  - **Without the extension** the form opens in the same browser the app is open in (Brave, Chrome, Edge, Opera, Yandex, Vivaldi;
-    Firefox is not supported). You can set a different browser in `config.json`: `"applyBrowserBin": "C:\\...\\brave.exe"`.
-  - This is a separate window with its own profile (`data\.browser-profile-<browser>`) — browsers don't allow controlling your main profile.
-    Log in to LinkedIn etc. there once, and the logins will be kept.
-
-## Requirements
-
-- Windows.
-- [Node.js](https://nodejs.org) 18 or newer (the LTS installer is fine). There is no `npm install`: the app has no dependencies.
-- Claude Code logged in with your subscription: running `claude` in a terminal should work without errors.
-  In PowerShell run `irm https://claude.ai/install.ps1 | iex`, then `claude` once to log in.
-  Or the Codex CLI instead (see the top of this file).
-
-## Getting started
-
-1. Download the code: on GitHub press **Code → Download ZIP** and unpack it, e.g. to `C:\Users\<you>\Documents\JobHunter`
-   (or `git clone` it).
-2. Double-click **start.bat** — `http://localhost:4317` opens in your browser. Keep its black window open while you use the app.
-   Your data appears in the `data\` folder next to it. Starting it again while it runs just opens the page.
-3. On the **Resume & profile** tab, fill in or check your resume and profile.
-4. Click **Find new jobs**. The first search takes 3–15 minutes.
-
-To update, unpack the new version over the old folder (or `git pull`). `data\` and `config.json` are not part of the
-download, so your resume, jobs and settings are kept. Then restart start.bat and press ↻ on the extension.
-
-## Settings (config.json)
-
-| Field | What it does |
+| | |
 |---|---|
-| `port` | Web page port (default 4317). |
-| `claudeBin` | Path to `claude` if it isn't on PATH. |
-| `models` | Model for each action: `search` (job search), `analyze` (job analysis), `tailor` (CV + letter), `people` (HR and referral search). Options: `haiku`, `sonnet`, `opus`. Default is `sonnet` everywhere. |
-| `effort` | How long the model thinks: `low`, `medium`, `high`. Default is `medium` everywhere. |
-| `perplexity` | Use Perplexity from your claude.ai account when searching (`true`/`false`, see below). |
-| `mcpConfig` | Path to a JSON file with MCP servers (e.g. Perplexity, see below). |
-| `extraAllowedTools` | Which MCP tools to allow, e.g. `["mcp__perplexity"]`. |
-| `maxJobsPerSearch` | Maximum number of jobs per search. |
-| `maxParallel` | How many Claude runs go at once (default 2). Search, form filling and resume sync always run one at a time. |
-| `searchTimeoutMinutes` | Search timeout. |
-| `timeouts` | Timeout in minutes for the other actions: `analyze`, `tailor`, `people`, `apply`, `resume`. |
-| `resumeSyncOnStart` | Check the resume on Google Drive on every start (`true`/`false`). |
-| `letterMaxChars` | Longest cover letter in characters, greeting and sign-off included (150–5000, default `1200`). Under 500 the letter is a 1–2 sentence note; longer limits give a few paragraphs. The Cover letter tab can set another limit for one Regenerate. |
-| `cvTwoPages` | Always fit the tailored CV on 2 pages (`true`/`false`, default `false`). Generate builds the PDF, counts the pages and, if there are more, asks Claude to shorten the CV; if your base resume is longer than 2 pages and the CV leaves much of page 2 empty, asks Claude to bring content back so both pages are full (+1–2 minutes). |
-| `autoSearch` | Automatic search while the server is running: `enabled`, `everyHours`, `maxAgeDays`, `sourcesOnly`. |
-| `languages` | Text language: `cv` (resume), `letter` (cover letter), `messages` (LinkedIn notes), `forms` (form answers). `"auto"` means the job's language, otherwise a language name, e.g. `"English"`. By default the resume and forms are in English, and the letter and notes are in the job's language. For a single CV you can pick the language under "Options" above the Generate button. |
-| `applyBrowserBin`, `browserBin`, `applyBrowserPort` | Browser for filling forms, browser for PDFs, debug port of the form browser. |
+| 🔎 **Job search** | Claude searches the web for jobs that fit your profile, drops duplicates and closed listings, and scores each 0–100. |
+| 🏢 **Company boards** | Paste a Greenhouse, Lever, Ashby or Workable board: all its postings come in through the public API, free. |
+| 💼 **LinkedIn** | Every search also reads LinkedIn's public job pages for your keywords, in your country and remote. No login. |
+| 📡 **Extra sources** | Any job site or public Telegram channel, filtered by your "Look for" and "Hide" words before Claude sees them. |
+| 💰 **Salary** | The posted range, or an estimate from Glassdoor, Levels.fyi and others, with sources. |
+| 📝 **Tailored CV + letter** | ATS keywords, no invented experience, plus a list of requirements you don't meet. |
+| ✅ **ATS score & check** | How well the CV matches the job, and the PDF text the way an ATS reads it. |
+| 🤝 **People to contact** | A recruiter and three possible referrers at the company, with a ready LinkedIn note. |
+| 🖊️ **Form filling** | Fills the application in your own browser via the extension. Auto apply only when you ask for it. |
+| 📋 **Tracking** | New → Interested → Applied → Interview → Offer, with notes; skip reasons teach future searches. |
 
-All of this can be changed on the **Settings** tab in the app: models and effort for each action (plus the presets
-Economy / Balanced / Best quality / Maximum), timeouts, auto search, resume, browsers, the Claude path with a
-"Test Claude" button, and run statistics (`data\usage.json`). Changes apply immediately, except the port, which needs ↻ Restart.
+## Quick start
 
-## Perplexity
+**You need:** Windows, [Node.js](https://nodejs.org) 18+, and [Claude Code](https://claude.ai/code) logged in
+(in PowerShell: `irm https://claude.ai/install.ps1 | iex`, then run `claude` once).
+Prefer Codex? `npm install -g @openai/codex`, `codex login`, then pick it in Settings → AI provider.
 
-Job search uses Perplexity together with the built-in WebSearch/WebFetch: Perplexity finds fresh postings,
-and Claude then opens each one via WebFetch and verifies it. When analyzing a job or generating a CV, Perplexity
-helps if the job page doesn't open.
+1. **Code → Download ZIP** on this page and unpack it anywhere (or `git clone`).
+2. Double-click **`start.bat`**. The app opens at `http://localhost:4317`; keep the black window open.
+3. Fill in **Resume & profile** (or import your resume from a PDF or Google Drive link on the Setup tab).
+4. Press **Find new jobs**. The first search takes 3–15 minutes.
 
-It works through the Perplexity connector in your claude.ai account (the same one Claude Code is logged in with),
-so no API key is needed. To turn it off: `"perplexity": false` in `config.json`. On start (and on "Test Claude")
-the app checks `claude mcp list`; if the connector isn't there, runs go without it and Settings says so.
+**Browser extension** (for filling forms in your own browser, with your logins):
+open `chrome://extensions` (or `brave://`, `edge://`), turn on **Developer mode**,
+**Load unpacked** → the `extension` folder. Without it, forms open in a separate browser window.
 
-If you don't have the connector in claude.ai, you can connect Perplexity with your own API key (paid, separate from the subscription):
+**Updating:** unpack the new version over the old one (or `git pull`) and restart `start.bat`.
+Your `data\` folder and `config.json` aren't in the download, so nothing is lost. Press ↻ on the extension.
 
-1. Copy `mcp-perplexity.example.json` to `mcp-perplexity.json` and paste in your key.
-2. In `config.json`: `"mcpConfig": "mcp-perplexity.json"`, `"extraAllowedTools": ["mcp__perplexity"]`.
+## Good to know
 
-## Where the data lives
+- **Costs.** Every action is a separate `claude -p` (or `codex exec`) run on your plan. A search uses a noticeable share
+  of your limits, a CV a little. Settings has presets from Economy to Maximum and shows usage.
+- **Settings.** Everything is on the Settings tab: models and effort per action, timeouts, auto search every N hours,
+  languages, CV length, browsers. It is stored in `config.json` (see `config.example.json`).
+- **Perplexity.** If your claude.ai account has the Perplexity connector, searches use it automatically.
+  Otherwise you can add your own key: copy `mcp-perplexity.example.json` to `mcp-perplexity.json`.
+- **Your data** lives in `data\` as plain files: `jobs.json`, `resume.md`, `profile.md`, and `applications\<id>\`
+  with the CV and letter for each job. Back it up like any folder.
+- **LinkedIn** may answer "429" if you search too often; it can be turned off in Settings → Search.
 
-Everything is in the `data\` folder: `jobs.json` (jobs), `resume.md`, `profile.md`, `applications\<id>\` (resumes and letters for each job).
-These are plain files — you can back them up or put them in git (the data folder is excluded in `.gitignore` because it contains personal data).
-
-## FAQ
-
-**Is it free?**
-Yes. The app costs nothing and has no paid features. The AI work runs on your own Claude Code
-(or Codex) account, so it uses your plan's limits. A search uses a noticeable share; a CV uses a little.
-
-**What do I need to run it?**
-Windows, Node.js 18+, and Claude Code logged in with a plan that includes it (running `claude` in a terminal should work),
-or the Codex CLI logged in with `codex login`. No API key is needed. See [Requirements](#requirements).
-
-**Where does my resume go?**
-Your resume, profile and jobs stay in the `data\` folder on your computer. The server is reachable only
-from your own machine. To do its work, the app sends the resume and job texts to the AI you picked
-(Anthropic for Claude, OpenAI for Codex), just like when you use their apps yourself. Nothing goes to us.
+<details>
+<summary><b>FAQ</b></summary>
 
 **Will it apply to jobs without asking me?**
-No. It finds jobs, writes CVs and letters, and fills forms, but you press Submit yourself.
-The only exception is the **Try to auto apply** button, which sends the one application you pressed it for.
+No. Only the **Try to auto apply** button submits, and only the one application you pressed it for.
 
 **Will the CV make up experience?**
-It shouldn't. Claude is told to use only your base resume and profile, and the code then checks the CV for
-numbers and skills that aren't there and fixes them. The ATS score tab marks anything new in red.
-Still, read every CV before you send it.
+It shouldn't. Claude may use only your resume and profile, then the code checks the CV for numbers and skills
+that aren't there and fixes them. The ATS score tab marks anything new in red. Still, read every CV before sending.
+
+**Where does my resume go?**
+Only to the AI you picked (Anthropic or OpenAI), through their own CLI and your account. Nothing goes to us.
 
 **Can LinkedIn block my account?**
-Job search reads LinkedIn's public guest pages without logging in, so your account isn't involved.
-If searches run too often, LinkedIn may answer "429" for a while; it can be turned off in Settings → Search.
-Form filling runs in your browser with your logins, so use auto apply at your own risk.
+Search reads public pages without logging in, so your account isn't involved. Form filling uses your logins,
+so use auto apply at your own risk.
 
-**Does it work on macOS or Linux?**
-Not yet. The app is built and tested on Windows. Mac support is planned.
+**macOS or Linux?**
+Not yet: it is built and tested on Windows.
 
-## Important
+</details>
 
-- The server listens only on `127.0.0.1` — it isn't reachable from other devices. Don't expose it to the internet: it runs on your subscription.
-- Every action is a separate `claude -p` run. Up to `maxParallel` (2) runs go at once; short tasks (link analysis, CV, form) are queued ahead of searches. A search uses a noticeable share of your limits, CV tailoring uses a little.
-- The app submits an application only via the **Try to auto apply** button; everything else you submit yourself.
-- Claude can misjudge jobs — open the link before applying and reread the resume before sending.
-- The browser extension asks for access to all sites because application forms can be on any site. It acts only when you
-  press "Open & fill" or "Try to auto apply", and talks only to the local server.
-- Your data in `data\` is stored as plain files, not encrypted. See [SECURITY.md](SECURITY.md) for details and how to report a problem.
+<details>
+<summary><b>For developers</b></summary>
 
-## Disclaimer
+- `server.js` is the web server, `public/` the page, `extension/` the form-filling extension, `lib/` the rest.
+- Agents are behind one interface in `lib/ai.js`: `runAgent({ prompt, schema, tools, config, ... })` returns
+  `{ data, costUsd, durationMs }`; `checkAgent(config)` reports install and login status.
+  Adapters: `lib/claude.js`, `lib/codex.js`.
+- `npm test` runs the tests. `node test/settings-browser.js` checks Settings in a real browser;
+  `node test/agent-smoke.js` runs live Codex checks (uses your limits).
+- `search.js` runs one search without the UI; `schedule-daily-search.bat` registers it as a daily Windows task.
 
-Use at your own risk. This is a personal tool, not affiliated with LinkedIn, Anthropic, OpenAI or any job site.
-Reading LinkedIn's guest pages and filling forms automatically may go against some sites' terms of use, and a site may
-limit or block you for it. You are responsible for what you send to employers: check every CV, letter and form before it goes out.
-AI runs use your own Claude or Codex plan and its limits.
+</details>
+
+## Security & disclaimer
+
+The server listens only on `127.0.0.1` and rejects requests from other sites. The extension asks for access to all sites
+because forms can be anywhere, but acts only when you press a button in the app. See [SECURITY.md](SECURITY.md).
+
+Use at your own risk. Not affiliated with LinkedIn, Anthropic, OpenAI or any job site. Reading job sites and filling forms
+automatically may go against some sites' terms, and a site may limit you for it. Check every CV, letter and form before it goes out.
 
 ## License
 
-[MIT](LICENSE). Inter font: SIL Open Font License (`public/InterVariable.LICENSE.txt`).
-Scoring and ATS check logic ported from [Resume Matcher](https://github.com/srbhr/Resume-Matcher) (Apache-2.0).
+[MIT](LICENSE). Inter font under the SIL Open Font License. ATS scoring logic ported from
+[Resume Matcher](https://github.com/srbhr/Resume-Matcher) (Apache-2.0).
