@@ -848,6 +848,7 @@ document.addEventListener('click', async e => {
     $('#viewSources').classList.toggle('hidden', t.dataset.view !== 'sources');
     $('#viewSettings').classList.toggle('hidden', t.dataset.view !== 'settings');
     $('#viewSetup').classList.toggle('hidden', t.dataset.view !== 'setup');
+    $('#viewFaq').classList.toggle('hidden', t.dataset.view !== 'faq');
     if (t.dataset.view === 'setup') loadSetup();
     if (t.dataset.view === 'resume') loadTexts();
     if (t.dataset.view === 'sources') loadSources();

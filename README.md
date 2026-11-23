@@ -178,6 +178,38 @@ If you don't have the connector in claude.ai, you can connect Perplexity with yo
 Everything is in the `data\` folder: `jobs.json` (jobs), `resume.md`, `profile.md`, `applications\<id>\` (resumes and letters for each job).
 These are plain files — you can back them up or put them in git (the data folder is excluded in `.gitignore` because it contains personal data).
 
+## FAQ
+
+**Is it free?**
+Yes. The app costs nothing and has no paid features. The AI work runs on your own Claude Code
+(or Codex) account, so it uses your plan's limits. A search uses a noticeable share; a CV uses a little.
+
+**What do I need to run it?**
+Windows and Claude Code logged in with a plan that includes it (running `claude` in a terminal should work),
+or the Codex CLI logged in with `codex login`. No API key is needed. See [Requirements](#requirements).
+
+**Where does my resume go?**
+Your resume, profile and jobs stay in the `data\` folder on your computer. The server is reachable only
+from your own machine. To do its work, the app sends the resume and job texts to the AI you picked
+(Anthropic for Claude, OpenAI for Codex), just like when you use their apps yourself. Nothing goes to us.
+
+**Will it apply to jobs without asking me?**
+No. It finds jobs, writes CVs and letters, and fills forms, but you press Submit yourself.
+The only exception is the **Try to auto apply** button, which sends the one application you pressed it for.
+
+**Will the CV make up experience?**
+It shouldn't. Claude is told to use only your base resume and profile, and the code then checks the CV for
+numbers and skills that aren't there and fixes them. The ATS score tab marks anything new in red.
+Still, read every CV before you send it.
+
+**Can LinkedIn block my account?**
+Job search reads LinkedIn's public guest pages without logging in, so your account isn't involved.
+If searches run too often, LinkedIn may answer "429" for a while; it can be turned off in Settings → Search.
+Form filling runs in your browser with your logins, so use auto apply at your own risk.
+
+**Does it work on macOS or Linux?**
+Not yet. The app is built and tested on Windows. Mac support is planned.
+
 ## Important
 
 - The server listens only on `127.0.0.1` — it isn't reachable from other devices. Don't expose it to the internet: it runs on your subscription.

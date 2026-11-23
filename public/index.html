@@ -16,6 +16,7 @@
     <button class="tab" data-view="resume">Resume &amp; profile</button>
     <button class="tab" data-view="sources">Extra sources</button>
     <button class="tab" data-view="settings">Settings</button>
+    <button class="tab" data-view="faq">FAQ</button>
     <button class="tab hidden" data-view="setup" id="setupTab">Setup<span class="setupDot" aria-hidden="true"></span></button>
   </nav>
   <div class="searchGroup">
@@ -141,6 +142,34 @@
     <p class="muted">Job Hunter uses the AI provider selected in Settings to find and score jobs and write CVs.</p>
     <ol id="setupSteps" class="setupSteps"><li class="muted">Checking…</li></ol>
     <div class="testRow"><button id="setupCheck">Check again</button><span id="setupMsg" class="muted"></span></div>
+  </div>
+</main>
+
+<main id="viewFaq" class="view hidden">
+  <div class="sourcesWrap settingsWrap faqWrap">
+    <h1>Questions people ask</h1>
+    <details class="faqItem" open><summary>Is it free?</summary>
+      <p>Yes. The app costs nothing and has no paid features. The AI work runs on your own Claude Code (or Codex) account,
+        so it uses your plan's limits. A search uses a noticeable share; a CV uses a little. Settings → Usage shows which actions use the most.</p></details>
+    <details class="faqItem"><summary>What do I need to run it?</summary>
+      <p>Windows and Claude Code logged in with a plan that includes it (running <code>claude</code> in a terminal should work),
+        or the Codex CLI logged in with <code>codex login</code>. No API key is needed. The Setup tab appears and walks you through it if something is missing.</p></details>
+    <details class="faqItem"><summary>Where does my resume go?</summary>
+      <p>Your resume, profile and jobs stay in the <code>data</code> folder on your computer. The server is reachable only from your own machine.
+        To do its work, the app sends the resume and job texts to the AI you picked (Anthropic for Claude, OpenAI for Codex),
+        just like when you use their apps yourself. Nothing goes to us.</p></details>
+    <details class="faqItem"><summary>Will it apply to jobs without asking me?</summary>
+      <p>No. It finds jobs, writes CVs and letters, and fills forms, but you press Submit yourself.
+        The only exception is the <b>Try to auto apply</b> button, which sends the one application you pressed it for.</p></details>
+    <details class="faqItem"><summary>Will the CV make up experience?</summary>
+      <p>It shouldn't. The AI is told to use only your base resume and profile, and the code then checks the CV for numbers and skills
+        that aren't there and fixes them. The ATS score tab marks anything new in red. Still, read every CV before you send it.</p></details>
+    <details class="faqItem"><summary>Can LinkedIn block my account?</summary>
+      <p>Job search reads LinkedIn's public guest pages without logging in, so your account isn't involved. If searches run too often,
+        LinkedIn may answer “429” for a while; you can turn it off in Settings → Search.
+        Form filling runs in your browser with your logins, so use auto apply at your own risk.</p></details>
+    <details class="faqItem"><summary>Does it work on macOS or Linux?</summary>
+      <p>Not yet. The app is built and tested on Windows. Mac support is planned.</p></details>
   </div>
 </main>
 

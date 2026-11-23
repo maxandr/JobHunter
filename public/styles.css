@@ -323,6 +323,11 @@ table.usage { width: 100%; border-collapse: collapse; font-size: 13px; }
 .usage th, .usage td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--line); font-variant-numeric: tabular-nums; }
 .usage th { color: var(--muted); font-weight: 500; font-size: 11.5px; }
 .usage tfoot td { font-weight: 600; border-bottom: none; }
+.faqItem { border-top: 1px solid var(--line); padding: 14px 0; }
+.faqItem:last-child { border-bottom: 1px solid var(--line); }
+.faqItem summary { cursor: pointer; font-weight: 500; }
+.faqItem summary:hover { color: var(--accent, var(--ink)); }
+.faqItem p { margin: 10px 0 0; line-height: 1.55; color: var(--muted); max-width: 72ch; }
 .rawBox summary { cursor: pointer; color: var(--muted); font-weight: 500; }
 .rawBox summary:hover { color: var(--ink); }
 .rawBox textarea { width: 100%; margin: 12px 0; font-family: "Cascadia Mono", Consolas, monospace; font-size: 12px; resize: vertical; }
