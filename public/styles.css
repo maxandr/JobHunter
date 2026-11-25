@@ -63,7 +63,7 @@ input[type="checkbox"] { min-height: 0; accent-color: var(--accent); width: 14px
   border-bottom: 1px solid var(--line); flex-shrink: 0;
 }
 .brand { font-weight: 650; font-size: 14px; letter-spacing: -.01em; display: inline-flex; align-items: center; gap: 8px; }
-.logo { width: 14px; height: 14px; border-radius: 4px; background: var(--ink); display: inline-block; }
+.logo { width: 18px; height: 18px; display: inline-block; }
 .tabs { display: flex; gap: 2px; flex: 1; }
 .searchGroup { display: flex; gap: 6px; align-items: center; }
 .tab { background: transparent; border-color: transparent; color: var(--muted); }
